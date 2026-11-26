@@ -66,9 +66,7 @@ class Arena extends Phaser.Scene {
     })
     observer.observe(field)
     this.events.once('shutdown', () => observer.disconnect())
-    // Temporarily isolate SVG camera performance from crater rendering in MAX.
-    const cutCrater = vector ? undefined : terrain.cutCrater
-    void addIslandFighter(this, arena, map, cutCrater, actors.svg).catch(error => {
+    void addIslandFighter(this, arena, map, terrain.cutCrater, actors.svg).catch(error => {
       console.error('Не удалось запустить управление персонажем', error)
     })
   }
