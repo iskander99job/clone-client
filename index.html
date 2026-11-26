@@ -9,18 +9,12 @@
 <body>
   <main class="game">
     <header>
-      <div><div id="mode" class="kicker">ДУЭЛЬ С БОТОМ</div><h1>Кратер</h1></div>
+      <div><div class="kicker">ДУЭЛЬ С БОТОМ</div><h1>Кратер</h1></div>
       <button id="restart" type="button">Заново</button>
     </header>
-    <div class="online">
-      <button id="online" type="button" disabled>Позвать друга</button>
-      <button id="skip" type="button" hidden>Пропустить повтор</button>
-      <label id="invite-control" hidden>Ссылка для друга<input id="invite" type="url" readonly></label>
-      <p id="connection" role="status" hidden></p>
-    </div>
     <div class="score">
-      <div class="fighter player"><span id="player-name">Мята · ты</span><strong id="player-hp">100</strong><progress id="player-bar" max="100" value="100" aria-label="Здоровье Мяты"></progress></div>
-      <div class="fighter bot"><span id="bot-name">Искра · бот</span><strong id="bot-hp">100</strong><progress id="bot-bar" max="100" value="100" aria-label="Здоровье Искры"></progress></div>
+      <div class="fighter player"><span>Мята · ты</span><strong id="player-hp">100</strong><progress id="player-bar" max="100" value="100" aria-label="Здоровье Мяты"></progress></div>
+      <div class="fighter bot"><span>Искра · бот</span><strong id="bot-hp">100</strong><progress id="bot-bar" max="100" value="100" aria-label="Здоровье Искры"></progress></div>
     </div>
     <section class="arena" aria-label="Поле боя">
       <div id="field"></div>

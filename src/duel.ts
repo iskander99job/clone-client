@@ -38,6 +38,14 @@ export const aim = (angle: number, direction: number) => ({
   y: -Math.sin(angle * Math.PI / 180),
 })
 
+export function terrainMaskFromPixels(rgba: Uint8ClampedArray) {
+  return Array.from({ length: columns * rows }, (_, index) => {
+    const x = index % columns * CELL + CELL / 2
+    const y = Math.floor(index / columns) * CELL + CELL / 2
+    return Number(rgba[(y * WIDTH + x) * 4 + 3] >= 128)
+  })
+}
+
 export class Duel {
   world = new RAPIER.World({ x: 0, y: GRAVITY })
   mask = new Array<number>(columns * rows).fill(0)
@@ -62,13 +70,17 @@ export class Duel {
 
   readonly online: boolean
 
-  constructor(online = false) {
+  constructor(online = false, terrainMask?: number[]) {
     this.online = online
     this.world.timestep = STEP
     this.world.lengthUnit = 32
-    for (let y = 0; y < rows; y++) {
-      for (let x = 1; x < columns - 1; x++) {
-        this.mask[y * columns + x] = Number(y * CELL >= groundHeight(x * CELL))
+    if (terrainMask) {
+      this.mask = terrainMask.slice()
+    } else {
+      for (let y = 0; y < rows; y++) {
+        for (let x = 1; x < columns - 1; x++) {
+          this.mask[y * columns + x] = Number(y * CELL >= groundHeight(x * CELL))
+        }
       }
     }
     this.rebuildTerrain()
@@ -114,8 +126,12 @@ export class Duel {
   }
 
   createFighter(x: number, direction: number): Fighter {
+    const column = Math.floor(x / CELL)
+    const surface = this.mask.findIndex((solid, index) => solid === 1 && index % columns === column)
+    const groundY = this.online ? groundHeight(x)
+      : surface < 0 ? HEIGHT : Math.floor(surface / columns) * CELL
     const body = this.world.createRigidBody(
-      RAPIER.RigidBodyDesc.dynamic().setTranslation(x, groundHeight(x) - RADIUS - 4)
+      RAPIER.RigidBodyDesc.dynamic().setTranslation(x, groundY - RADIUS - 4)
         .lockRotations().setLinearDamping(0.18).setCcdEnabled(true),
     )
     this.world.createCollider(RAPIER.ColliderDesc.ball(RADIUS).setFriction(1.5), body)

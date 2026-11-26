@@ -1,15 +1,8 @@
 import Phaser from 'phaser'
-import { aim, CELL, Duel, HEIGHT, initPhysics, MAX_WIND, RADIUS, WIDTH, type Fighter, type Point, type ReplayFrame } from './duel'
-import { createMatch, getMatch, joinMatch, sessionValue, submitShot, type Match } from './online'
+import { aim, CELL, Duel, HEIGHT, initPhysics, MAX_WIND, RADIUS, WIDTH, terrainMaskFromPixels, type Fighter } from './duel'
+import terrainUrl from './assets/terrain.png'
 import './style.css'
 
-const online = document.querySelector<HTMLButtonElement>('#online')!
-const skip = document.querySelector<HTMLButtonElement>('#skip')!
-const invite = document.querySelector<HTMLInputElement>('#invite')!
-const inviteControl = document.querySelector<HTMLLabelElement>('#invite-control')!
-const connection = document.querySelector<HTMLParagraphElement>('#connection')!
-const mode = document.querySelector<HTMLElement>('#mode')!
-const names = ['player', 'bot'].map(id => document.querySelector<HTMLElement>('#' + id + '-name')!)
 const status = document.querySelector<HTMLParagraphElement>('#status')!
 const wind = document.querySelector<HTMLParagraphElement>('#wind')!
 const fire = document.querySelector<HTMLButtonElement>('#fire')!
@@ -23,33 +16,33 @@ const hp = ['player', 'bot'].map(id => ({
   bar: document.querySelector<HTMLProgressElement>('#' + id + '-bar')!,
 }))
 
-const REPLAY_FRAME_MS = 50
-
-function interpolate(from: Point, to: Point, progress: number): Point {
-  return {
-    x: from.x + (to.x - from.x) * progress,
-    y: from.y + (to.y - from.y) * progress,
-  }
-}
-
 class Arena extends Phaser.Scene {
   duel!: Duel
   ground!: Phaser.Textures.CanvasTexture
   action!: Phaser.GameObjects.Graphics
   accumulator = 0
   drawnRevision = 0
-  match?: Match
-  token?: string
-  inviteId = new URL(location.href).searchParams.get('match')?.match(/^[\w-]{16}$/)?.[0]
-  busy = false
-  polling = false
-  replayTime = 0
-  replayFrame?: ReplayFrame
-  replayProjectile?: ReplayFrame['rocket']
-  replaying = false
-  replayImpact?: number
+
+  terrainImage!: CanvasImageSource
+  initialMask!: number[]
+
+  preload() {
+    this.load.image('terrain-art', terrainUrl)
+  }
 
   create() {
+    const terrain = this.textures.get('terrain-art').getSourceImage()
+    if (!this.textures.exists('terrain-art') || !(terrain instanceof HTMLImageElement)) {
+      status.textContent = 'Не удалось загрузить карту'
+      return
+    }
+    this.terrainImage = terrain
+    const pixels = document.createElement('canvas')
+    pixels.width = WIDTH
+    pixels.height = HEIGHT
+    const context = pixels.getContext('2d')!
+    context.drawImage(this.terrainImage, 0, 0, WIDTH, HEIGHT)
+    this.initialMask = terrainMaskFromPixels(context.getImageData(0, 0, WIDTH, HEIGHT).data)
     const sky = this.textures.createCanvas('sky', WIDTH, HEIGHT)!
     const ctx = sky.context
     const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT)
@@ -81,193 +74,20 @@ class Arena extends Phaser.Scene {
     this.add.image(0, 0, 'ground').setOrigin(0)
     this.action = this.add.graphics()
     this.newMatch()
-    restart.addEventListener('click', () => {
-      this.match = undefined
-      this.inviteId = undefined
-      this.token = undefined
-      this.replaying = false
-      this.replayFrame = undefined
-      this.setRoomUrl()
-      this.report()
-      this.newMatch()
+    restart.addEventListener('click', () => this.newMatch())
+    fire.addEventListener('click', () => {
+      if (this.duel.phase === 'aim') {
+        this.duel.fire(this.duel.angle, this.duel.power)
+        this.updateControls()
+      }
     })
-    fire.addEventListener('click', () => void this.fireShot())
-    online.addEventListener('click', () => void this.openMatch())
-    skip.addEventListener('click', () => this.finishReplay())
-    invite.addEventListener('click', () => invite.select())
-    window.setInterval(() => {
-      if (!document.hidden) void this.poll()
-    }, 1800)
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) void this.poll()
-    })
-    const saved = this.inviteId && sessionValue('crater:' + this.inviteId)
-    if (saved) void this.openMatch()
     angle.addEventListener('input', () => this.readAim())
     power.addEventListener('input', () => this.readAim())
   }
 
-  setRoomUrl(id?: string) {
-    const url = new URL(location.href)
-    if (id) url.searchParams.set('match', id)
-    else url.searchParams.delete('match')
-    history.replaceState(null, '', url)
-  }
-
-  report(message = '') {
-    connection.hidden = !message
-    connection.textContent = message
-  }
-
-  async openMatch() {
-    if (this.busy) return
-    if (this.match) {
-      invite.focus()
-      invite.select()
-      try {
-        await navigator.clipboard.writeText(invite.value)
-        this.report('Ссылка скопирована')
-      } catch {
-        this.report('Скопируй выделенную ссылку')
-      }
-      return
-    }
-    this.busy = true
-    this.report('Подключение…')
-    try {
-      const saved = this.inviteId && sessionValue('crater:' + this.inviteId)
-      const entry = this.inviteId
-        ? saved
-          ? { token: saved, match: (await getMatch(this.inviteId, saved))! }
-          : await joinMatch(this.inviteId)
-        : await createMatch()
-      this.token = entry.token
-      this.inviteId = entry.match.id
-      sessionValue('crater:' + entry.match.id, entry.token)
-      this.setRoomUrl(entry.match.id)
-      invite.value = location.href
-      this.installMatch(entry.match, entry.match.replay?.seat !== entry.match.seat)
-      this.report()
-    } catch (error) {
-      this.report((error as Error).message)
-    } finally {
-      this.busy = false
-    }
-  }
-
-  async poll() {
-    const match = this.match
-    const token = this.token
-    if (!match || !token || this.busy || this.polling || this.replaying || match.state.finished) return
-    this.polling = true
-    try {
-      const next = await getMatch(match.id, token, match.version)
-      if (this.match?.id === match.id) {
-        if (next && next.version > this.match.version) this.installMatch(next, true)
-        if (connection.textContent === 'Нет связи. Повторяем подключение…') this.report()
-      }
-    } catch {
-      if (this.match?.id === match.id) this.report('Нет связи. Повторяем подключение…')
-    } finally {
-      this.polling = false
-    }
-  }
-
-  canFire() {
-    return this.match
-      ? this.match.ready && this.match.state.turn === this.match.seat && !this.match.state.finished && !this.replaying && !this.busy
-      : !this.inviteId && !this.busy && this.duel.phase === 'aim'
-  }
-
-  async fireShot() {
-    if (!this.canFire()) return
-    if (!this.match || !this.token) {
-      this.duel.fire(this.duel.angle, this.duel.power)
-      this.updateControls()
-      return
-    }
-    this.busy = true
-    try {
-      this.installMatch(await submitShot(this.match, this.token, this.duel.angle, this.duel.power), true)
-      this.report()
-    } catch (error) {
-      this.report((error as Error).message)
-    } finally {
-      this.busy = false
-      void this.poll()
-    }
-  }
-
-  installMatch(match: Match, play: boolean) {
-    const first = !this.match
-    this.match = match
-    if (first) {
-      this.duel.world.free()
-      this.duel = new Duel(true)
-      this.drawnRevision = 0
-    }
-    const replay = play ? match.replay : null
-    this.replaying = Boolean(replay)
-    this.replayTime = 0
-    this.replayImpact = undefined
-    this.replayFrame = undefined
-    this.duel.restore(replay?.before ?? match.state)
-    if (replay) this.showReplayFrame(0)
-    mode.textContent = 'ОНЛАЙН-ДУЭЛЬ'
-    names[0].textContent = match.seat === 0 ? 'Мята · ты' : 'Мята · друг'
-    names[1].textContent = match.seat === 1 ? 'Искра · ты' : 'Искра · друг'
-  }
-
-  showReplayFrame(cursor: number) {
-    const index = Math.floor(cursor)
-    const match = this.match!
-    const frame = match.replay!.frames[index]
-    if (!frame) {
-      this.finishReplay()
-      return
-    }
-    const next = match.replay!.frames[index + 1] ?? frame
-    const progress = cursor - index
-    this.duel.fighters.forEach((fighter, seat) => {
-      fighter.body.setTranslation(interpolate(frame.positions[seat], next.positions[seat], progress), false)
-    })
-    this.replayProjectile = frame.rocket && next.rocket
-      ? {
-          position: interpolate(frame.rocket.position, next.rocket.position, progress),
-          velocity: interpolate(frame.rocket.velocity, next.rocket.velocity, progress),
-        }
-      : frame.rocket
-    if (frame === this.replayFrame) return
-    this.replayFrame = frame
-    if (frame.rocket) {
-      this.duel.trail.push(frame.rocket.position)
-      if (this.duel.trail.length > 12) this.duel.trail.shift()
-    } else {
-      this.duel.trail = []
-    }
-    if (frame.blast && this.replayImpact === undefined) {
-      this.replayImpact = this.replayTime
-      this.duel.blast = frame.blast
-      if (this.duel.mask.join('') !== match.state.mask) {
-        this.duel.mask = Array.from(match.state.mask, Number)
-        this.duel.rebuildTerrain()
-      }
-    }
-  }
-
-  finishReplay() {
-    if (!this.replaying || !this.match) return
-    this.replaying = false
-    this.replayFrame = undefined
-    this.duel.restore(this.match.state)
-  }
-
   newMatch() {
     this.duel?.world.free()
-    this.duel = new Duel()
-    mode.textContent = 'ДУЭЛЬ С БОТОМ'
-    names[0].textContent = 'Мята · ты'
-    names[1].textContent = 'Искра · бот'
+    this.duel = new Duel(false, this.initialMask)
     this.accumulator = 0
     this.drawnRevision = 0
     angle.value = String(this.duel.angle)
@@ -285,16 +105,11 @@ class Arena extends Phaser.Scene {
   }
 
   update(_time: number, delta: number) {
-    if (this.replaying) {
-      this.replayTime += Math.min(delta, 100)
-      this.showReplayFrame(this.replayTime / REPLAY_FRAME_MS)
-      if (this.replayImpact !== undefined) this.duel.blastAge = (this.replayTime - this.replayImpact) / 1000
-    } else if (!this.match && !this.inviteId && !this.busy) {
-      this.accumulator += Math.min(delta, 100)
-      while (this.accumulator >= 1000 / 60) {
-        this.duel.tick()
-        this.accumulator -= 1000 / 60
-      }
+    if (!this.duel) return
+    this.accumulator += Math.min(delta, 100)
+    while (this.accumulator >= 1000 / 60) {
+      this.duel.tick()
+      this.accumulator -= 1000 / 60
     }
     this.updateControls()
     this.draw()
@@ -302,30 +117,14 @@ class Arena extends Phaser.Scene {
 
   updateControls() {
     const { phase, winner, turn, fighters } = this.duel
-    fire.disabled = angle.disabled = power.disabled = !this.canFire()
-    online.disabled = this.busy || this.replaying || (!this.match && !this.inviteId && phase !== 'aim' && phase !== 'over')
-    restart.disabled = this.busy
-    const restartLabel = this.match || this.inviteId ? 'Тренировка' : 'Заново'
-    if (restart.textContent !== restartLabel) restart.textContent = restartLabel
-    online.hidden = Boolean(this.match?.ready)
-    const onlineLabel = this.match ? 'Скопировать приглашение' : this.inviteId ? 'Вступить в дуэль' : 'Позвать друга'
-    if (online.textContent !== onlineLabel) online.textContent = onlineLabel
-    inviteControl.hidden = !this.match || this.match.ready
-    skip.hidden = !this.replaying
-    const localMessage = {
+    fire.disabled = angle.disabled = power.disabled = phase !== 'aim'
+    const message = {
       aim: 'Твой ход',
       bot: 'Искра целится…',
       flight: turn ? 'Выстрел Искры' : 'Твой выстрел',
       settle: 'Ход завершается…',
       over: winner === 0 ? 'Ты победил!' : winner === 1 ? 'Искра победила' : 'Ничья',
     }[phase]
-    const message = this.match
-      ? this.replaying ? 'Повтор выстрела'
-        : this.match.state.finished
-          ? winner === null ? 'Ничья' : winner === this.match.seat ? 'Ты победил!' : 'Друг победил'
-          : !this.match.ready ? 'Ждём друга'
-            : this.match.state.turn === this.match.seat ? 'Твой ход' : 'Ход друга'
-      : this.inviteId ? 'Приглашение на дуэль' : localMessage
     if (status.textContent !== message) status.textContent = message
     const windPercent = Math.round(Math.abs(this.duel.wind) / MAX_WIND * 100)
     const windLabel = this.duel.wind === 0
@@ -353,19 +152,7 @@ class Arena extends Phaser.Scene {
       ctx.closePath()
     }
     ctx.clip('evenodd')
-    const soil = ctx.createLinearGradient(0, 260, 0, HEIGHT)
-    soil.addColorStop(0, '#51765b')
-    soil.addColorStop(0.47, '#395b4d')
-    soil.addColorStop(1, '#263e3d')
-    ctx.fillStyle = soil
-    ctx.fillRect(0, 0, WIDTH, HEIGHT)
-    for (let i = 0; i < 410; i++) {
-      ctx.fillStyle = i % 3 ? '#afbc7834' : '#142e4066'
-      ctx.fillRect((i * 127 + 61) % WIDTH, 243 + (i * 67) % 268, 2 + i % 10, 2 + i % 3)
-    }
-    ctx.strokeStyle = '#9fbd73'
-    ctx.lineWidth = 9
-    ctx.stroke()
+    ctx.drawImage(this.terrainImage, 0, 0, WIDTH, HEIGHT)
     ctx.restore()
     this.ground.refresh()
   }
@@ -374,9 +161,7 @@ class Arena extends Phaser.Scene {
     if (!fighter.hp) return
     const g = this.action
     const { x, y } = fighter.body.translation()
-    const replay = this.replaying ? this.match?.replay : null
-    const localSeat = this.match?.seat ?? 0
-    const angle = replay?.seat === index ? replay.angle : index === localSeat ? this.duel.angle : this.duel.botAngle
+    const angle = index ? this.duel.botAngle : this.duel.angle
     const direction = aim(angle, fighter.direction)
     const mint = index === 0
     const color = mint ? 0x8bf0b9 : 0xff9b6d
@@ -412,7 +197,7 @@ class Arena extends Phaser.Scene {
     g.lineStyle(16, outline).lineBetween(handle.x, handle.y, muzzle.x, muzzle.y)
     g.lineStyle(10, 0x537686).lineBetween(handle.x, handle.y, muzzle.x, muzzle.y)
     g.fillStyle(0xffd370).fillCircle(muzzle.x, muzzle.y, 5)
-    if (index === localSeat && this.canFire()) {
+    if (mint && this.duel.phase === 'aim') {
       for (let i = 1; i <= 5; i++) {
         const spacing = 7 + this.duel.power / 13
         g.fillStyle(0xffedab, 1 - i / 7)
@@ -433,10 +218,9 @@ class Arena extends Phaser.Scene {
       const opacity = (i + 1) / trail.length
       g.fillStyle(0xffd183, opacity * 0.46).fillCircle(point.x, point.y, 5 * opacity)
     })
-    const projectile = this.replaying ? this.replayProjectile : rocket && { position: rocket.translation(), velocity: rocket.linvel() }
-    if (projectile) {
-      const { x, y } = projectile.position
-      const velocity = projectile.velocity
+    if (rocket) {
+      const { x, y } = rocket.translation()
+      const velocity = rocket.linvel()
       const heading = Math.atan2(velocity.y, velocity.x)
       g.lineStyle(8, 0xff985a).lineBetween(x - Math.cos(heading) * 12, y - Math.sin(heading) * 12, x, y)
       g.fillStyle(0xfff1b9).fillCircle(x, y, 5)
