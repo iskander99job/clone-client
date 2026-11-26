@@ -12,7 +12,7 @@ export async function addIslandFighter(
   scene: Phaser.Scene,
   arena: HTMLElement,
   map: ArenaMap,
-  cutCrater: (point: Point, radius: number) => void,
+  cutCrater: ((point: Point, radius: number) => void) | undefined,
   actors: SVGSVGElement,
 ) {
   const { width, height, waterY } = map
@@ -194,7 +194,7 @@ export async function addIslandFighter(
     }
     if (duel.blast && lastBlast !== duel.blast) {
       lastBlast = duel.blast
-      cutCrater(lastBlast, BLAST)
+      cutCrater?.(lastBlast, BLAST)
     }
     const position = body.translation()
     if (position.y >= waterY || position.x < 0 || position.x > width) {
