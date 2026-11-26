@@ -19,6 +19,16 @@ const map = {
 }[mapId]
 const { width, height, waterY } = map
 const arena = document.querySelector<HTMLElement>('.arena')!
+const field = document.querySelector<HTMLElement>('#field')!
+const maxBridge = document.querySelector<HTMLScriptElement>('#max-bridge')!
+
+function detectMaxMobile() {
+  const platform = (window as Window & { WebApp?: { platform?: string | null } }).WebApp?.platform
+  document.documentElement.classList.toggle('max-mobile', platform === 'android' || platform === 'ios')
+}
+
+maxBridge.addEventListener('load', detectMaxMobile, { once: true })
+detectMaxMobile()
 arena.setAttribute('aria-label', map.title)
 arena.dataset.map = mapId
 document.title = `Кратер — ${map.title}`
@@ -69,7 +79,6 @@ class Arena extends Phaser.Scene {
   }
 
   create() {
-    const field = document.querySelector<HTMLElement>('#field')!
     const vector = map.vectorArt === undefined ? undefined : createVectorTerrain(this, field, map.vectorArt, width, height)
     if (!vector && !this.textures.exists('terrain-art')) return
     const terrain = vector ?? createRasterTerrain(this, width, height)
@@ -79,6 +88,16 @@ class Arena extends Phaser.Scene {
       vector?.updateView(left, top, visibleWidth, visibleHeight)
       actors.updateView(left, top, visibleWidth, visibleHeight)
     })
+    // Phaser RESIZE measures the transformed bounding box. Use the actual layout size instead.
+    const observer = new ResizeObserver(() => {
+      const { clientWidth, clientHeight } = field
+      if (clientWidth > 0 && clientHeight > 0
+        && (clientWidth !== this.scale.width || clientHeight !== this.scale.height)) {
+        this.scale.resize(clientWidth, clientHeight)
+      }
+    })
+    observer.observe(field)
+    this.events.once('shutdown', () => observer.disconnect())
     void addIslandFighter(this, arena, map, terrain.cutCrater, actors.svg).catch(error => {
       console.error('Не удалось запустить управление персонажем', error)
     })
@@ -88,10 +107,10 @@ class Arena extends Phaser.Scene {
 new Phaser.Game({
   type: Phaser.AUTO,
   transparent: true,
-  width,
-  height,
-  parent: 'field',
+  width: field.clientWidth,
+  height: field.clientHeight,
+  parent: field,
   scene: Arena,
-  scale: { mode: Phaser.Scale.RESIZE },
+  scale: { mode: Phaser.Scale.NONE },
   audio: { noAudio: true },
 })

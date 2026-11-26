@@ -1,6 +1,6 @@
 .hud {
-  --control-size: clamp(44px, 7vw, 72px);
-  --control-gap: clamp(8px, 1vw, 14px);
+  --control-size: clamp(44px, 7cqw, 72px);
+  --control-gap: clamp(8px, 1cqw, 14px);
   --hud-glass: #172c396b;
   position: absolute;
   inset: 0;
@@ -12,17 +12,17 @@
 .hud-top,
 .hud-bottom {
   position: absolute;
-  left: max(10px, env(safe-area-inset-left));
-  right: max(10px, env(safe-area-inset-right));
+  left: max(10px, var(--safe-left));
+  right: max(10px, var(--safe-right));
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: clamp(6px, 2vw, 24px);
+  gap: clamp(6px, 2cqw, 24px);
 }
 
-.hud-top { top: max(10px, env(safe-area-inset-top)); }
+.hud-top { top: max(10px, var(--safe-top)); }
 .hud-bottom {
-  bottom: max(10px, env(safe-area-inset-bottom));
+  bottom: max(10px, var(--safe-bottom));
   align-items: end;
 }
 
@@ -30,7 +30,7 @@
   --fighter-accent: #72d15a;
   display: flex;
   align-items: flex-start;
-  gap: clamp(5px, .7vw, 9px);
+  gap: clamp(5px, .7cqw, 9px);
   width: min(44%, 268px);
   min-width: 0;
 }
@@ -45,12 +45,12 @@
   flex: none;
   display: grid;
   place-items: center;
-  width: clamp(34px, 5.4vw, 62px);
+  width: clamp(34px, 5.4cqw, 62px);
   aspect-ratio: 1;
   box-sizing: border-box;
   border: 1px solid #ecf8ff40;
   background: #182f406b;
-  font-size: clamp(19px, 3.1vw, 34px);
+  font-size: clamp(19px, 3.1cqw, 34px);
 }
 
 .avatar-player {
@@ -63,13 +63,13 @@
   position: relative;
   display: grid;
   align-items: center;
-  min-height: clamp(21px, 2.6vw, 30px);
+  min-height: clamp(21px, 2.6cqw, 30px);
   box-sizing: border-box;
   padding-inline: 4px;
   border: 1px solid #ecf8ff4d;
   background: #edf7ff1a;
   color: #fff;
-  font-size: clamp(10px, 1.6vw, 18px);
+  font-size: clamp(10px, 1.6cqw, 18px);
   font-weight: 800;
   white-space: nowrap;
 }
@@ -111,7 +111,7 @@
   margin-top: 4px;
   overflow: hidden;
   color: #f3fbff;
-  font-size: clamp(11px, 1.1vw, 14px);
+  font-size: clamp(11px, 1.1cqw, 14px);
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -130,7 +130,7 @@
   box-shadow: inset 0 1px #ffffff30, 0 3px #172c3955;
   color: #fff;
   font: inherit;
-  font-size: clamp(23px, 4vw, 40px);
+  font-size: clamp(23px, 4cqw, 40px);
   pointer-events: auto;
   transition: background-color 120ms, box-shadow 120ms, transform 120ms;
 }
@@ -154,7 +154,7 @@
 
 .direction-pad {
   grid-template-areas: ". up ." "left down right";
-  margin-inline-start: clamp(8px, 2vw, 36px);
+  margin-inline-start: clamp(8px, 2cqw, 36px);
 }
 .up { grid-area: up; }
 .left { grid-area: left; }
@@ -179,9 +179,9 @@
   object-fit: contain;
 }
 
-@media (max-height: 460px) {
+@container (max-height: 460px) {
   .hud {
-    --control-size: clamp(44px, 12dvh, 56px);
+    --control-size: clamp(44px, 12cqh, 56px);
   }
 
   .hud-actions {
@@ -203,8 +203,8 @@
 
 .weapon-menu {
   box-sizing: border-box;
-  width: min(300px, calc(100vw - 32px));
-  max-height: calc(100dvh - 32px);
+  width: min(300px, calc(100cqw - 32px));
+  max-height: calc(100cqh - 32px);
   margin: auto;
   padding: 18px;
   border: 1px solid #8fa7b8;
@@ -213,6 +213,11 @@
   color: #f3fbff;
   box-shadow: 0 12px 40px #07101780;
   pointer-events: auto;
+}
+
+/* showModal() promotes the dialog to the top layer, outside the arena transform. */
+@media (orientation: portrait) {
+  .max-mobile .weapon-menu { transform: rotate(90deg); }
 }
 
 .weapon-menu::backdrop { background: #091524b8; }

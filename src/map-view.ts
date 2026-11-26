@@ -13,6 +13,7 @@ export function bindMapView(
   updateTerrainView?: (left: number, top: number, width: number, height: number) => void,
 ) {
   const camera = scene.cameras.main
+  const portrait = matchMedia('(orientation: portrait)')
   let zoom = 1
   const center = { x: mapWidth / 2, y: mapHeight / 2 }
   const pointers = new Map<number, Point>()
@@ -56,10 +57,12 @@ export function bindMapView(
 
   function point(event: MouseEvent): Point {
     const bounds = arena.getBoundingClientRect()
-    return {
-      x: (event.clientX - bounds.left - bounds.width / 2) * camera.width / bounds.width,
-      y: (event.clientY - bounds.top - bounds.height / 2) * camera.height / bounds.height,
+    const x = (event.clientX - bounds.left) / bounds.width - 0.5
+    const y = (event.clientY - bounds.top) / bounds.height - 0.5
+    if (portrait.matches && document.documentElement.classList.contains('max-mobile')) {
+      return { x: y * camera.width, y: -x * camera.height }
     }
+    return { x: x * camera.width, y: y * camera.height }
   }
 
   function gesture() {
