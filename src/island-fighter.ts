@@ -56,7 +56,7 @@ export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement, 
 
   const inventory = button('.inventory')
   const shoot = button('.shoot')
-  const menu = arena.querySelector<HTMLElement>('#weapon-menu')!
+  const menu = arena.querySelector<HTMLDialogElement>('#weapon-menu')!
   const bazooka = menu.querySelector<HTMLButtonElement>('[data-weapon="bazooka"]')!
   const unequip = menu.querySelector<HTMLButtonElement>('[data-weapon="none"]')!
   const up = button('.up')
@@ -72,16 +72,9 @@ export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement, 
   let damagedTerrain: Phaser.Textures.CanvasTexture | null = null
   let lastBlast: Point | undefined
 
-  function toggleMenu(open: boolean) {
-    menu.hidden = !open
-    inventory.setAttribute('aria-expanded', String(open))
-    if (open) (equipped ? unequip : bazooka).focus()
-    else if (menu.contains(document.activeElement) || document.activeElement === document.body) inventory.focus()
-  }
-
   function syncWeapon() {
     bazooka.setAttribute('aria-pressed', String(equipped))
-    unequip.setAttribute('aria-pressed', String(!equipped))
+    unequip.hidden = !equipped
     up.disabled = down.disabled = !equipped
     shoot.disabled = !equipped || duel.phase !== 'aim'
     barrel.setVisible(equipped)
@@ -92,12 +85,29 @@ export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement, 
     return { x: position.x + fighter.direction * 6, y: position.y + 7 }
   }
 
-  inventory.addEventListener('click', () => toggleMenu(menu.hidden === true), { signal })
+  inventory.addEventListener('click', () => {
+    heldKeys.clear()
+    pressed.clear()
+    menu.showModal()
+    inventory.setAttribute('aria-expanded', 'true')
+  }, { signal })
+  menu.addEventListener('close', () => {
+    inventory.setAttribute('aria-expanded', 'false')
+    inventory.focus()
+  }, { signal })
+  menu.addEventListener('click', event => {
+    if (event.target !== menu) return
+    const bounds = menu.getBoundingClientRect()
+    if (event.clientX < bounds.left || event.clientX > bounds.right
+      || event.clientY < bounds.top || event.clientY > bounds.bottom) menu.close()
+  }, { signal })
+  menu.addEventListener('wheel', event => event.stopPropagation(), { signal })
+  menu.querySelector('[data-close-inventory]')!.addEventListener('click', () => menu.close(), { signal })
   for (const [option, active] of [[bazooka, true], [unequip, false]] as const) {
     option.addEventListener('click', () => {
       equipped = active
       syncWeapon()
-      toggleMenu(false)
+      menu.close()
     }, { signal })
   }
   shoot.addEventListener('click', () => {
@@ -141,8 +151,7 @@ export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement, 
   button('.jump-back').addEventListener('click', () => requestJump(-1), { signal })
 
   window.addEventListener('keydown', event => {
-    if (event.altKey || event.ctrlKey || event.metaKey) return
-    if (event.code === 'Escape' && !menu.hidden) toggleMenu(false)
+    if (menu.open || event.altKey || event.ctrlKey || event.metaKey) return
     if (event.code === 'ArrowLeft' || event.code === 'ArrowRight'
       || (equipped && (event.code === 'ArrowUp' || event.code === 'ArrowDown'))) {
       event.preventDefault()
@@ -265,6 +274,8 @@ export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement, 
   scene.events.on('update', update)
   scene.events.once('shutdown', () => {
     input.abort()
+    if (menu.open) menu.close()
+    inventory.setAttribute('aria-expanded', 'false')
     scene.events.off('update', update)
     if (damagedTerrain) scene.textures.remove(damagedTerrain.key)
     duel.world.free()

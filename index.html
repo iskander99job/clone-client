@@ -49,17 +49,24 @@
         </div>
         <div class="hud-actions" role="group" aria-label="Действия">
           <button class="hud-button shoot" type="button" aria-label="Выстрел" aria-disabled="true"><span class="target-icon" aria-hidden="true"></span></button>
-          <button class="hud-button inventory" type="button" aria-label="Инвентарь" aria-expanded="false" aria-controls="weapon-menu" aria-disabled="true">
+          <button class="hud-button inventory" type="button" aria-label="Инвентарь" aria-haspopup="dialog" aria-expanded="false" aria-controls="weapon-menu" aria-disabled="true">
             <img class="inventory-crate" src="/src/assets/inventory-crate.webp" alt="">
           </button>
-          <div class="weapon-menu" id="weapon-menu" role="group" aria-label="Оружие" hidden>
-            <button type="button" data-weapon="bazooka">Базука</button>
-            <button type="button" data-weapon="none">Убрать</button>
-          </div>
           <button class="hud-button jump-forward" type="button" aria-label="Прыжок вперёд" aria-disabled="true"><span class="jump-icon" aria-hidden="true"></span></button>
           <button class="hud-button jump-back" type="button" aria-label="Прыжок назад" aria-disabled="true"><span class="jump-icon jump-icon-back" aria-hidden="true"></span></button>
         </div>
       </div>
+      <dialog class="weapon-menu" id="weapon-menu" aria-labelledby="weapon-menu-title">
+        <h2 id="weapon-menu-title">Инвентарь</h2>
+        <button class="weapon-card" type="button" data-weapon="bazooka" aria-pressed="false" autofocus>
+          <span class="bazooka-icon" aria-hidden="true"></span>
+          <span>Базука</span>
+        </button>
+        <div class="weapon-menu-actions">
+          <button type="button" data-weapon="none" hidden>Убрать</button>
+          <button type="button" data-close-inventory>Закрыть</button>
+        </div>
+      </dialog>
     </section>
   </main>
   <script type="module" src="/src/main.ts"></script>
