@@ -1,0 +1,32 @@
+{
+  "name": "clone-client",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iskander99job/clone-client.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/iskander99job/clone-client/issues"
+  },
+  "homepage": "https://github.com/iskander99job/clone-client#readme",
+  "dependencies": {
+    "@dimforge/rapier2d-compat": "^0.21.0",
+    "d3-contour": "^4.0.3",
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "@types/d3-contour": "^3.0.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  }
+}
