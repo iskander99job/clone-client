@@ -105,7 +105,6 @@
 
 .nickname {
   margin-top: 4px;
-  padding-inline: 4px;
   overflow: hidden;
   color: #f3fbff;
   font-size: clamp(11px, 1.1vw, 14px);
