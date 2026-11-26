@@ -139,6 +139,7 @@
 
 .direction-pad {
   grid-template-areas: ". up ." "left down right";
+  color: #fff;
 }
 .up { grid-area: up; }
 .left { grid-area: left; }
