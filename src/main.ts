@@ -22,13 +22,14 @@ const arena = document.querySelector<HTMLElement>('.arena')!
 const field = document.querySelector<HTMLElement>('#field')!
 const maxBridge = document.querySelector<HTMLScriptElement>('#max-bridge')!
 
-function detectMaxMobile() {
+function detectMax() {
   const platform = (window as Window & { WebApp?: { platform?: string | null } }).WebApp?.platform
+  document.documentElement.classList.toggle('max-app', Boolean(platform))
   document.documentElement.classList.toggle('max-mobile', platform === 'android' || platform === 'ios')
 }
 
-maxBridge.addEventListener('load', detectMaxMobile, { once: true })
-detectMaxMobile()
+maxBridge.addEventListener('load', detectMax, { once: true })
+detectMax()
 arena.setAttribute('aria-label', map.title)
 arena.dataset.map = mapId
 document.title = `Кратер — ${map.title}`

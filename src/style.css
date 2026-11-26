@@ -107,10 +107,12 @@ body { margin: 0 }
 
 .arena[data-panning] { cursor: grabbing }
 
-.max-mobile .arena[data-panning] .clouds span,
-.max-mobile .arena[data-panning] .water-bubbles span {
-  animation-play-state: paused;
+.max-app .clouds span {
+  left: var(--x);
+  animation: none;
 }
+
+.max-app .water-bubbles { display: none; }
 #field { inset-block: 0 }
 #field canvas {
   position: relative;
