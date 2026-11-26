@@ -31,21 +31,15 @@
 }
 
 .fighter {
-  --fighter-accent: #9fe383;
+  --fighter-accent: #72d15a;
   display: flex;
-  align-items: center;
-  gap: clamp(5px, 1vw, 10px);
-  box-sizing: border-box;
-  width: min(46%, 208px);
+  align-items: flex-start;
+  width: min(44%, 268px);
   min-width: 0;
-  padding: clamp(5px, .7vw, 8px);
-  border: 1px solid #ecf8ff40;
-  border-radius: 12px;
-  background: #102b3d9c;
 }
 
 .fighter-bot {
-  --fighter-accent: #ff989e;
+  --fighter-accent: #ee536a;
   flex-direction: row-reverse;
   text-align: right;
 }
@@ -54,48 +48,67 @@
   flex: none;
   display: grid;
   place-items: center;
-  width: clamp(30px, 4.2vw, 44px);
+  width: clamp(34px, 5.4vw, 62px);
   aspect-ratio: 1;
   box-sizing: border-box;
-  border: 1px solid color-mix(in srgb, var(--fighter-accent) 65%, transparent);
-  border-radius: 50%;
-  background: #182f4090;
-  font-size: clamp(17px, 2.4vw, 25px);
+  border: 1px solid #ecf8ff40;
+  background: #182f406b;
+  font-size: clamp(19px, 3.1vw, 34px);
 }
 
 .fighter-stats { flex: 1; min-width: 0; }
 
 .health {
-  display: flex;
+  position: relative;
+  display: grid;
   align-items: center;
-  gap: clamp(4px, .65vw, 8px);
-  color: #f3fbff;
-  font-size: clamp(9px, 1vw, 12px);
-  font-weight: 650;
+  min-height: clamp(21px, 2.6vw, 30px);
+  box-sizing: border-box;
+  padding-inline: 4px;
+  border: 1px solid #ecf8ff4d;
+  background: #edf7ff1a;
+  color: #fff;
+  font-size: clamp(10px, 1.6vw, 18px);
+  font-weight: 800;
   white-space: nowrap;
 }
 
 .health progress {
-  flex: 1;
-  min-width: 0;
-  height: 6px;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   appearance: none;
-  overflow: hidden;
   border: 0;
-  border-radius: 2px;
-  background: #edf7ff36;
+  background: transparent;
   accent-color: var(--fighter-accent);
 }
 
-.fighter-bot .health { flex-direction: row-reverse; }
 .fighter-bot progress { direction: rtl; }
 .health progress::-webkit-progress-bar { background: transparent; }
-.health progress::-webkit-progress-value { background: var(--fighter-accent); }
-.health progress::-moz-progress-bar { background: var(--fighter-accent); }
-.health span { font-variant-numeric: tabular-nums; }
+.health progress::-webkit-progress-value { background: color-mix(in srgb, var(--fighter-accent) 62%, transparent); }
+.health progress::-moz-progress-bar { background: color-mix(in srgb, var(--fighter-accent) 62%, transparent); }
+.health span {
+  position: relative;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px #172c39b3;
+}
+
+.fighter-player .health::after {
+  content: "";
+  position: absolute;
+  left: calc(100% + 4px);
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform: translateY(-50%);
+  border-block: 5px solid transparent;
+  border-right: 6px solid #fff;
+}
 
 .nickname {
   margin-top: 4px;
+  padding-inline: 4px;
   overflow: hidden;
   color: #f3fbff;
   font-size: clamp(11px, 1.1vw, 14px);
