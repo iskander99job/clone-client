@@ -1,14 +1,10 @@
 .hud {
-  --hud-ink: #fff6d9;
-  --hud-shell: #172c39;
   --control-size: clamp(44px, 7vw, 72px);
   --control-gap: clamp(8px, 1vw, 14px);
   --hud-glass: #172c396b;
-  --hud-line: #fff6d955;
   position: absolute;
   inset: 0;
   z-index: 1;
-  color: var(--hud-ink);
   font: 750 1rem/1.15 system-ui, sans-serif;
   pointer-events: none;
 }
@@ -172,37 +168,13 @@
 .jump-forward { grid-area: forward; }
 .jump-back { grid-area: back; }
 
-.inventory {
-  grid-area: inventory;
-  position: relative;
-  pointer-events: auto;
-  cursor: pointer;
-}
+.inventory { grid-area: inventory; }
+
 .inventory-crate {
   width: 74%;
   height: 74%;
   object-fit: contain;
 }
-
-.inventory summary::-webkit-details-marker { display: none; }
-.inventory ul {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 8px);
-  box-sizing: border-box;
-  width: min(224px, calc(100vw - 24px));
-  max-height: 35dvh;
-  overflow-y: auto;
-  margin: 0;
-  padding: 10px 14px;
-  list-style: none;
-  border: 1px solid var(--hud-line);
-  border-radius: 10px;
-  background: var(--hud-shell);
-  cursor: default;
-  font-size: .85rem;
-}
-.inventory li + li { margin-top: 6px; }
 
 @media (max-height: 460px) {
   .hud {
@@ -225,11 +197,3 @@
 .jump-icon { --icon: url('./assets/jump.png'); }
 .target-icon { --icon: url('./assets/target.png'); }
 .jump-icon-back { transform: scaleX(-1); }
-
-.icon-credit {
-  padding-top: 6px;
-  border-top: 1px solid var(--hud-line);
-  font-size: .7rem;
-}
-
-.icon-credit a { color: inherit; }
