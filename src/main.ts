@@ -28,6 +28,21 @@ for (const cloud of clouds) {
   cloud.style.setProperty('--delay', `${-progress * duration}s`)
 }
 
+const water = arena.querySelector<HTMLElement>('.water')!
+const bubbleCount = 22
+
+for (let index = 0; index < bubbleCount; index++) {
+  const bubble = document.createElement('span')
+  const duration = 6 + Math.random() * 8
+  bubble.style.setProperty('--bubble-x', `${(index + 0.5 + (Math.random() - 0.5) * 0.8) / bubbleCount * 100}%`)
+  bubble.style.setProperty('--bubble-size', `${3 + Math.random() * 7}px`)
+  bubble.style.setProperty('--bubble-depth', `${35 + Math.random() * 60}cqh`)
+  bubble.style.setProperty('--bubble-drift', `${(Math.random() - 0.5) * 24}px`)
+  bubble.style.setProperty('--bubble-duration', `${duration}s`)
+  bubble.style.setProperty('--bubble-delay', `${-Math.random() * duration}s`)
+  water.append(bubble)
+}
+
 class Arena extends Phaser.Scene {
   preload() {
     this.load.image('terrain-art', terrainUrl)
