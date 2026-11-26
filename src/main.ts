@@ -1,10 +1,11 @@
 import Phaser from 'phaser'
 import terrainUrl from './assets/fruit-island.png'
+import terrain2xUrl from './assets/fruit-island-2x.webp'
 import { FRUIT_ISLAND } from './fruit-island.ts'
 import { bindMapView } from './map-view'
 import './style.css'
 
-// Keep the Phaser canvas at the island artwork's native resolution.
+// Keep the island's world dimensions independent of the texture resolution.
 const width = 2172
 const height = Math.round(width * FRUIT_ISLAND.height / FRUIT_ISLAND.width)
 const arena = document.querySelector<HTMLElement>('.arena')!
@@ -45,7 +46,10 @@ for (let index = 0; index < bubbleCount; index++) {
 
 class Arena extends Phaser.Scene {
   preload() {
-    this.load.image('terrain-art', terrainUrl)
+    const renderer = this.game.renderer
+    const supportsLargeTexture = !(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)
+      || renderer.getMaxTextureSize() >= width * 2
+    this.load.image('terrain-art', supportsLargeTexture ? terrain2xUrl : terrainUrl)
   }
 
   create() {
