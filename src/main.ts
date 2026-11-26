@@ -2,15 +2,14 @@ import Phaser from 'phaser'
 import terrainUrl from './assets/fruit-island.png'
 import terrain2xUrl from './assets/fruit-island-2x.webp'
 import { FRUIT_ISLAND } from './fruit-island.ts'
+import { addIslandFighter, loadIslandFighter } from './island-fighter'
 import { bindMapView } from './map-view'
 import './style.css'
 import './hud.css'
 
 // Keep the island's world dimensions independent of the texture resolution.
-const width = 2172
-const height = Math.round(width * FRUIT_ISLAND.height / FRUIT_ISLAND.width)
+const { width, height, waterY } = FRUIT_ISLAND
 const arena = document.querySelector<HTMLElement>('.arena')!
-const waterY = height * FRUIT_ISLAND.waterY / FRUIT_ISLAND.height
 
 const clouds = Array.from(arena.querySelectorAll<HTMLElement>('.clouds span'))
 const lanes = clouds.map((_, index) => index)
@@ -50,14 +49,19 @@ class Arena extends Phaser.Scene {
   preload() {
     const renderer = this.game.renderer
     const supportsLargeTexture = !(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)
-      || renderer.getMaxTextureSize() >= width * 2
+      || renderer.getMaxTextureSize() >= 4344
     this.load.image('terrain-art', supportsLargeTexture ? terrain2xUrl : terrainUrl)
+    this.load.image('terrain-mask', terrainUrl)
+    loadIslandFighter(this)
   }
 
   create() {
     if (!this.textures.exists('terrain-art')) return
     this.add.image(0, 0, 'terrain-art').setOrigin(0).setDisplaySize(width, height)
     bindMapView(arena, this, width, height, waterY)
+    void addIslandFighter(this, arena).catch(error => {
+      console.error('Не удалось запустить управление персонажем', error)
+    })
   }
 }
 

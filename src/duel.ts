@@ -11,7 +11,7 @@ export const RADIUS = 31
 export const initPhysics = () => RAPIER.init()
 const GRAVITY = 370
 const BLAST = 67
-const STEP = 1 / 60
+export const STEP = 1 / 60
 export const MAX_WIND = 90
 
 function rollWind() {
@@ -65,6 +65,7 @@ export class Duel {
   power = 49
   botAngle = 48
   rocketShape = new RAPIER.Ball(5)
+  private playerGroundProbe = new RAPIER.Ball(RADIUS - 1)
   rocket?: RAPIER.RigidBody
   trail: Point[] = []
   blast?: Point
@@ -202,18 +203,30 @@ export class Duel {
 
   private movingPlayer = false
 
-  private movePlayer(direction: number) {
-    if (!direction && !this.movingPlayer) return
-    this.movingPlayer = direction !== 0
-    const player = this.fighters[0]
-    const position = player.body.translation()
-    const ground = this.world.castRay(
-      new RAPIER.Ray(position, { x: 0, y: 1 }), RADIUS + 10, true,
+  playerGrounded(reach = 4) {
+    const { body } = this.fighters[0]
+    return this.world.castShape(
+      body.translation(), 0, { x: 0, y: 1 }, this.playerGroundProbe, 0, reach, true,
       RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC,
-    )
-    if (!ground) return
+    ) !== null
+  }
+
+  movePlayer(direction: number) {
+    if (!direction && !this.movingPlayer) return
+    const player = this.fighters[0]
     if (direction) player.direction = direction
+    if (!this.playerGrounded(10) || player.body.linvel().y < -20) return
+    this.movingPlayer = direction !== 0
     player.body.setLinvel({ x: direction * 155, y: player.body.linvel().y }, true)
+  }
+
+  jumpPlayer(relativeDirection: number) {
+    if (!this.playerGrounded()) return false
+    const { body, direction } = this.fighters[0]
+    if (body.linvel().y < -20) return false
+    body.setLinvel({ x: relativeDirection * direction * 125, y: -205 }, true)
+    this.movingPlayer = true
+    return true
   }
 
   tick(move = 0, elevation = 0) {
