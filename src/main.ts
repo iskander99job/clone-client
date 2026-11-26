@@ -1,9 +1,11 @@
 import Phaser from 'phaser'
 import RAPIER from '@dimforge/rapier2d-compat'
-import { aim, CELL, Duel, HEIGHT, MAX_WIND, RADIUS, WIDTH, type Fighter } from './duel'
+import { aim, CELL, Duel, HEIGHT, MAX_WIND, RADIUS, WIDTH, type Fighter, type Weapon } from './duel'
 import './style.css'
 
 const status = document.querySelector<HTMLParagraphElement>('#status')!
+const weapon = document.querySelector<HTMLSelectElement>('#weapon')!
+const powerControl = document.querySelector<HTMLLabelElement>('#power-control')!
 const wind = document.querySelector<HTMLParagraphElement>('#wind')!
 const fire = document.querySelector<HTMLButtonElement>('#fire')!
 const restart = document.querySelector<HTMLButtonElement>('#restart')!
@@ -58,9 +60,15 @@ class Arena extends Phaser.Scene {
     restart.addEventListener('click', () => this.newMatch())
     fire.addEventListener('click', () => {
       if (this.duel.phase === 'aim') {
-        this.duel.fire(this.duel.angle, this.duel.power)
+        this.duel.fire(this.duel.angle, this.duel.power, this.duel.weapon)
         this.updateControls()
       }
+    })
+    weapon.addEventListener('change', () => {
+      if (this.duel.phase !== 'aim') return
+      this.duel.weapon = weapon.value as Weapon
+      this.syncWeapon()
+      this.readAim()
     })
     angle.addEventListener('input', () => this.readAim())
     power.addEventListener('input', () => this.readAim())
@@ -71,11 +79,20 @@ class Arena extends Phaser.Scene {
     this.duel = new Duel()
     this.accumulator = 0
     this.drawnRevision = 0
+    weapon.value = this.duel.weapon
+    this.syncWeapon()
     angle.value = String(this.duel.angle)
     power.value = String(this.duel.power)
     this.readAim()
     this.updateControls()
     this.draw()
+  }
+
+  syncWeapon() {
+    const uzi = this.duel.weapon === 'uzi'
+    angle.min = uzi ? '-45' : '12'
+    if (uzi) angle.value = '3'
+    powerControl.hidden = uzi
   }
 
   readAim() {
@@ -97,11 +114,15 @@ class Arena extends Phaser.Scene {
 
   updateControls() {
     const { phase, winner, turn, fighters } = this.duel
-    fire.disabled = angle.disabled = power.disabled = phase !== 'aim'
+    fire.disabled = angle.disabled = weapon.disabled = phase !== 'aim'
+    power.disabled = phase !== 'aim' || this.duel.weapon === 'uzi'
+    const burstSelected = this.duel.weapon === 'uzi'
+    const fireLabel = burstSelected ? 'Дать очередь' : 'Выстрелить'
+    if (fire.textContent !== fireLabel) fire.textContent = fireLabel
     const message = {
       aim: 'Твой ход',
       bot: 'Искра целится…',
-      flight: turn ? 'Выстрел Искры' : 'Твой выстрел',
+      flight: turn ? 'Выстрел Искры' : burstSelected ? 'Очередь Узи' : 'Твой выстрел',
       settle: 'Ход завершается…',
       over: winner === 0 ? 'Ты победил!' : winner === 1 ? 'Искра победила' : 'Ничья',
     }[phase]
@@ -185,13 +206,14 @@ class Arena extends Phaser.Scene {
     g.fillCircle(face + 7 + fighter.direction * 3, y - 4, 4)
     g.fillEllipse(face, y + 10, 10, 4)
     const handle = { x: x + direction.x * 20, y: y + direction.y * 20 }
-    const muzzle = this.duel.muzzle(fighter, angle)
-    g.lineStyle(16, outline).lineBetween(handle.x, handle.y, muzzle.x, muzzle.y)
-    g.lineStyle(10, 0x537686).lineBetween(handle.x, handle.y, muzzle.x, muzzle.y)
+    const weapon = mint ? this.duel.weapon : 'bazooka'
+    const muzzle = this.duel.muzzle(fighter, angle, weapon)
+    g.lineStyle(weapon === 'uzi' ? 12 : 16, outline).lineBetween(handle.x, handle.y, muzzle.x, muzzle.y)
+    g.lineStyle(weapon === 'uzi' ? 6 : 10, 0x537686).lineBetween(handle.x, handle.y, muzzle.x, muzzle.y)
     g.fillStyle(0xffd370).fillCircle(muzzle.x, muzzle.y, 5)
     if (mint && this.duel.phase === 'aim') {
       for (let i = 1; i <= 5; i++) {
-        const spacing = 7 + this.duel.power / 13
+        const spacing = weapon === 'uzi' ? 16 : 7 + this.duel.power / 13
         g.fillStyle(0xffedab, 1 - i / 7)
         g.fillCircle(muzzle.x + direction.x * i * spacing, muzzle.y + direction.y * i * spacing, 2.7)
       }
@@ -210,6 +232,12 @@ class Arena extends Phaser.Scene {
       const opacity = (i + 1) / trail.length
       g.fillStyle(0xffd183, opacity * 0.46).fillCircle(point.x, point.y, 5 * opacity)
     })
+    for (const { start, end, age, hit } of this.duel.tracers) {
+      const opacity = 1 - age / 0.16
+      g.lineStyle(2, 0xffde89, opacity).lineBetween(start.x, start.y, end.x, end.y)
+      g.fillStyle(0xfff1b9, opacity).fillCircle(start.x, start.y, 6 * opacity)
+      if (hit) g.fillStyle(0xffad68, opacity).fillCircle(end.x, end.y, 5 * opacity)
+    }
     if (rocket) {
       const { x, y } = rocket.translation()
       const velocity = rocket.linvel()

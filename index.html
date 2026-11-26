@@ -21,9 +21,15 @@
       <p id="status" role="status">Загрузка…</p>
     </section>
     <div class="controls">
+      <label class="weapon">Оружие
+        <select id="weapon" disabled>
+          <option value="bazooka">Базука</option>
+          <option value="uzi">Узи</option>
+        </select>
+      </label>
       <p id="wind" class="wind">Ветер: —</p>
       <label>Угол <output id="angle-value" for="angle">47°</output><input id="angle" type="range" min="12" max="84" value="47" disabled></label>
-      <label>Сила <output id="power-value" for="power">49%</output><input id="power" type="range" min="15" max="100" value="49" disabled></label>
+      <label id="power-control">Сила <output id="power-value" for="power">49%</output><input id="power" type="range" min="15" max="100" value="49" disabled></label>
       <button id="fire" type="button" disabled>Выстрелить</button>
     </div>
   </main>
