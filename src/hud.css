@@ -29,7 +29,7 @@
 .fighter {
   --fighter-accent: #72d15a;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: clamp(5px, .7vw, 9px);
   width: min(44%, 268px);
   min-width: 0;
