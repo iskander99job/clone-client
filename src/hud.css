@@ -54,7 +54,7 @@
 }
 
 .avatar-player {
-  background: #182f406b url('./assets/boar.png') center / 100% no-repeat;
+  background: #182f406b url('./assets/boar.svg') center / 100% no-repeat;
 }
 
 .fighter-stats { flex: 1; min-width: 0; }
@@ -252,24 +252,10 @@
 .weapon-card[aria-pressed="true"] { box-shadow: inset 0 0 0 3px #547d42; }
 
 .bazooka-icon {
-  position: relative;
   width: 52px;
-  height: 14px;
-  border: 2px solid #26332d;
-  border-radius: 5px;
-  background: linear-gradient(90deg, #495732 16%, #758654 16% 76%, #daa64d 76% 88%, #495732 88%);
+  height: 25px;
+  background: url('./assets/bazooka.svg') center / contain no-repeat;
   transform: rotate(-22deg);
-}
-
-.bazooka-icon::after {
-  content: "";
-  position: absolute;
-  bottom: -8px;
-  left: 16px;
-  width: 9px;
-  height: 8px;
-  border-radius: 0 0 3px 3px;
-  background: #26332d;
 }
 
 .weapon-menu-actions {

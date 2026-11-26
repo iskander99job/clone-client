@@ -1,20 +1,19 @@
 import type Phaser from 'phaser'
 import type { Point } from './duel'
 import type { ArenaMap } from './maps'
-import boarUrl from './assets/boar.png'
+import boarSvg from './assets/boar.svg?raw'
+import bazookaSvg from './assets/bazooka.svg?raw'
+import { SVG_NS } from './svg-viewport'
 
 const FRAME = 256
 const FEET = 232
-
-export function loadIslandFighter(scene: Phaser.Scene) {
-  scene.load.image('boar', boarUrl)
-}
 
 export async function addIslandFighter(
   scene: Phaser.Scene,
   arena: HTMLElement,
   map: ArenaMap,
   cutCrater: (point: Point, radius: number) => void,
+  actors: SVGSVGElement,
 ) {
   const { width, height, waterY } = map
   const source = new Image()
@@ -37,10 +36,14 @@ export async function addIslandFighter(
   duel.wind = 0
   duel.fighters[1].body.setEnabled(false)
   const spawn = body.translation()
-  const sprite = scene.add.sprite(spawn.x, spawn.y + RADIUS, 'boar')
-    .setOrigin(0.5, FEET / FRAME)
+  const sprite = actors.appendChild(document.createElementNS(SVG_NS, 'g'))
+  sprite.classList.add('boar')
+  sprite.innerHTML = boarSvg
+  const bodyArt = sprite.querySelector('svg')!
+  bodyArt.setAttribute('x', String(-FRAME / 2))
+  bodyArt.setAttribute('y', String(-FEET))
   const baseScale = map.fighterSize / FRAME
-  sprite.setScale(baseScale)
+  sprite.setAttribute('transform', `translate(${spawn.x} ${spawn.y + RADIUS}) scale(${baseScale})`)
   const input = new AbortController()
   const { signal } = input
   const pressed = new Map<number, string>()
@@ -67,11 +70,10 @@ export async function addIslandFighter(
   const down = button('.down')
   let equipped = false
   let angle = 24
-  const barrel = scene.add.graphics().setName('bazooka').setVisible(false)
-  barrel.fillStyle(0x202829).fillRoundedRect(6, -8, 42, 16, 4)
-    .fillStyle(0x73834d).fillRoundedRect(8, -5, 38, 10, 3)
-    .fillStyle(0xdca554).fillRect(38, -5, 5, 10)
-    .fillStyle(0x292224).fillCircle(14, 4, 5)
+  const barrel = actors.appendChild(document.createElementNS(SVG_NS, 'g'))
+  barrel.classList.add('bazooka')
+  barrel.innerHTML = bazookaSvg
+  barrel.querySelector('svg')!.setAttribute('y', '-12')
   const effects = scene.add.graphics().setName('shot-effects')
   let lastBlast: Point | undefined
 
@@ -80,7 +82,7 @@ export async function addIslandFighter(
     unequip.hidden = !equipped
     up.disabled = down.disabled = !equipped
     shoot.disabled = !equipped || duel.phase !== 'aim'
-    barrel.setVisible(equipped)
+    barrel.style.display = equipped ? '' : 'none'
   }
 
   function grip(): Point {
@@ -224,15 +226,16 @@ export async function addIslandFighter(
     else if (landing) stretch = -0.16 * (landing / 0.11)
     else if (walking) stretch = stride * 0.035
 
-    sprite.setPosition(feet.x, feet.y + RADIUS)
-      .setFlipX(facing < 0)
-      .setAngle(walking ? stride * facing * 2.5 : 0)
-      .setScale(baseScale * (1 - stretch * 0.55), baseScale * (1 + stretch))
+    const rotation = walking ? stride * facing * 2.5 : 0
+    const scaleX = facing * baseScale * (1 - stretch * 0.55)
+    const scaleY = baseScale * (1 + stretch)
+    sprite.setAttribute('transform', `translate(${feet.x} ${feet.y + RADIUS}) rotate(${rotation}) scale(${scaleX} ${scaleY})`)
 
     if (equipped) {
       const origin = grip()
       const direction = aim(angle, facing)
-      barrel.setPosition(origin.x, origin.y).setRotation(Math.atan2(direction.y, direction.x))
+      const rotation = Math.atan2(direction.y, direction.x) * 180 / Math.PI
+      barrel.setAttribute('transform', `translate(${origin.x} ${origin.y}) rotate(${rotation}) scale(1 ${facing})`)
     }
     effects.clear()
     for (const [index, point] of duel.trail.entries()) {

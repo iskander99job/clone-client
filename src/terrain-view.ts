@@ -1,7 +1,6 @@
 import type Phaser from 'phaser'
 import type { Point } from './duel'
-
-const SVG_NS = 'http://www.w3.org/2000/svg'
+import { createSvgViewport, SVG_NS } from './svg-viewport'
 
 export function createVectorTerrain(
   scene: Phaser.Scene,
@@ -10,10 +9,7 @@ export function createVectorTerrain(
   width: number,
   height: number,
 ) {
-  const viewport = document.createElementNS(SVG_NS, 'svg')
-  viewport.classList.add('vector-terrain')
-  viewport.setAttribute('aria-hidden', 'true')
-  viewport.setAttribute('preserveAspectRatio', 'none')
+  const { svg: viewport, updateView } = createSvgViewport(scene, 'vector-terrain')
 
   const art = viewport.appendChild(document.createElementNS(SVG_NS, 'g'))
   // The SVG is a bundled project asset. Keep its paths inline for native rendering.
@@ -39,12 +35,9 @@ export function createVectorTerrain(
   ground.setAttribute('fill', 'white')
 
   field.prepend(viewport)
-  scene.events.once('shutdown', () => viewport.remove())
 
   return {
-    updateView(left: number, top: number, visibleWidth: number, visibleHeight: number) {
-      viewport.setAttribute('viewBox', `${left} ${top} ${visibleWidth} ${visibleHeight}`)
-    },
+    updateView,
     cutCrater(point: Point, radius: number) {
       const hole = mask.appendChild(document.createElementNS(SVG_NS, 'circle'))
       hole.setAttribute('cx', String(point.x))

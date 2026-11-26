@@ -89,7 +89,7 @@ body { margin: 0 }
   position: relative;
   display: block;
 }
-.vector-terrain {
+.world-svg {
   position: absolute;
   inset: 0;
   width: 100%;

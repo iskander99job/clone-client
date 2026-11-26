@@ -1,8 +1,9 @@
 import Phaser from 'phaser'
 import { FLAT_TEST, FRUIT_ARENA, FRUIT_FOREGROUND, STONE_QUARRY } from './maps'
-import { addIslandFighter, loadIslandFighter } from './island-fighter'
+import { addIslandFighter } from './island-fighter'
 import { bindMapView } from './map-view'
 import { createRasterTerrain, createVectorTerrain } from './terrain-view'
+import { createSvgViewport } from './svg-viewport'
 import './style.css'
 import './hud.css'
 
@@ -65,7 +66,6 @@ class Arena extends Phaser.Scene {
         || renderer.getMaxTextureSize() >= largeArt.width)
       this.load.image('terrain-art', supportsLargeTexture ? largeArt.url : map.art)
     }
-    loadIslandFighter(this)
   }
 
   create() {
@@ -73,8 +73,13 @@ class Arena extends Phaser.Scene {
     const vector = map.vectorArt === undefined ? undefined : createVectorTerrain(this, field, map.vectorArt, width, height)
     if (!vector && !this.textures.exists('terrain-art')) return
     const terrain = vector ?? createRasterTerrain(this, width, height)
-    bindMapView(arena, this, width, height, waterY, vector?.updateView)
-    void addIslandFighter(this, arena, map, terrain.cutCrater).catch(error => {
+    const actors = createSvgViewport(this, 'vector-actors')
+    field.append(actors.svg)
+    bindMapView(arena, this, width, height, waterY, (left, top, visibleWidth, visibleHeight) => {
+      vector?.updateView(left, top, visibleWidth, visibleHeight)
+      actors.updateView(left, top, visibleWidth, visibleHeight)
+    })
+    void addIslandFighter(this, arena, map, terrain.cutCrater, actors.svg).catch(error => {
       console.error('Не удалось запустить управление персонажем', error)
     })
   }
