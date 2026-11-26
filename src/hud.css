@@ -26,6 +26,19 @@
   align-items: end;
 }
 
+.build-version {
+  position: absolute;
+  top: calc(max(10px, var(--safe-top)) + clamp(38px, 6cqw, 66px));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #172c39b8;
+  color: #f3fbff;
+  font: 600 11px/1.2 ui-monospace, monospace;
+  white-space: nowrap;
+}
+
 .fighter {
   --fighter-accent: #72d15a;
   display: flex;

@@ -32,6 +32,8 @@ detectMaxMobile()
 arena.setAttribute('aria-label', map.title)
 arena.dataset.map = mapId
 document.title = `Кратер — ${map.title}`
+const buildVersion = import.meta.env.VITE_BUILD_SHA?.slice(0, 7) || 'dev'
+document.querySelector<HTMLElement>('#build-version')!.textContent = `Сборка ${buildVersion}`
 
 class Arena extends Phaser.Scene {
   preload() {
