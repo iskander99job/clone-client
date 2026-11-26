@@ -1,5 +1,7 @@
 import type Phaser from 'phaser'
 
+const MAX_ZOOM = 1.75
+
 type Point = { x: number; y: number }
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
@@ -29,7 +31,7 @@ export function bindMapView(
     const scale = cameraZoom()
     if (scale <= 0) return
     center.x = boundCenter(center.x, mapWidth, camera.width / scale)
-    const verticalTravel = Math.min(camera.height * 0.08, 64) / scale
+    const verticalTravel = Math.min(camera.height * 0.2, 180) / scale
     center.y = boundCenter(center.y, mapHeight, camera.height / scale, verticalTravel)
     camera.setZoom(scale).centerOn(center.x, center.y)
     const mapLeft = camera.width / 2 - center.x * scale
@@ -42,7 +44,7 @@ export function bindMapView(
   function moveView(from: Point, to: Point, requestedZoom: number) {
     const previousScale = cameraZoom()
     if (previousScale <= 0) return
-    zoom = clamp(requestedZoom, 1, 4)
+    zoom = clamp(requestedZoom, 1, MAX_ZOOM)
     const nextScale = cameraZoom()
     center.x += from.x / previousScale - to.x / nextScale
     center.y += from.y / previousScale - to.y / nextScale
