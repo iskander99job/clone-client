@@ -1,40 +1,55 @@
+import type Phaser from 'phaser'
+
 type Point = { x: number; y: number }
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
 
-export function bindMapView(arena: HTMLElement, aspect: number) {
+export function bindMapView(
+  arena: HTMLElement,
+  scene: Phaser.Scene,
+  mapWidth: number,
+  mapHeight: number,
+  waterY: number,
+) {
+  const camera = scene.cameras.main
   let zoom = 1
-  let x = 0
-  let y = 0
+  const center = { x: mapWidth / 2, y: mapHeight / 2 }
   const pointers = new Map<number, Point>()
 
+  function cameraZoom() {
+    return Math.min(camera.width / mapWidth, camera.height / mapHeight) * zoom
+  }
+
+  function boundCenter(value: number, mapSize: number, viewSize: number) {
+    const limit = Math.max(0, (mapSize - viewSize) / 2)
+    return clamp(value, mapSize / 2 - limit, mapSize / 2 + limit)
+  }
+
   function render() {
-    const width = arena.clientWidth
-    const height = arena.clientHeight
-    const mapHeight = Math.min(height, width / aspect)
-    const xLimit = Math.max(0, (mapHeight * aspect * zoom - width) / 2)
-    const yLimit = Math.max(0, (mapHeight * zoom - height) / 2)
-    x = clamp(x, -xLimit, xLimit)
-    y = clamp(y, -yLimit, yLimit)
-    arena.style.setProperty('--map-pan-x', `${x}px`)
-    arena.style.setProperty('--map-zoom', String(zoom))
-    arena.style.setProperty('--map-pan-y', `${y}px`)
+    const scale = cameraZoom()
+    if (scale <= 0) return
+    center.x = boundCenter(center.x, mapWidth, camera.width / scale)
+    center.y = boundCenter(center.y, mapHeight, camera.height / scale)
+    camera.setZoom(scale).centerOn(center.x, center.y)
+    const waterTop = camera.height / 2 + (waterY - center.y) * scale
+    arena.style.setProperty('--water-top', `${waterTop}px`)
   }
 
   function moveView(from: Point, to: Point, requestedZoom: number) {
-    const nextZoom = clamp(requestedZoom, 1, 4)
-    const ratio = nextZoom / zoom
-    x = to.x - (from.x - x) * ratio
-    y = to.y - (from.y - y) * ratio
-    zoom = nextZoom
+    const previousScale = cameraZoom()
+    if (previousScale <= 0) return
+    zoom = clamp(requestedZoom, 1, 4)
+    const nextScale = cameraZoom()
+    center.x += from.x / previousScale - to.x / nextScale
+    center.y += from.y / previousScale - to.y / nextScale
     render()
   }
 
   function point(event: MouseEvent): Point {
     const bounds = arena.getBoundingClientRect()
     return {
-      x: event.clientX - bounds.left - bounds.width / 2,
-      y: event.clientY - bounds.top - bounds.height / 2,
+      x: (event.clientX - bounds.left - bounds.width / 2) * camera.width / bounds.width,
+      y: (event.clientY - bounds.top - bounds.height / 2) * camera.height / bounds.height,
     }
   }
 
@@ -51,8 +66,7 @@ export function bindMapView(arena: HTMLElement, aspect: number) {
     event.preventDefault()
     const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? arena.clientHeight : 1
     if (!event.ctrlKey && Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-      x -= event.deltaX * units
-      render()
+      moveView({ x: event.deltaX * units, y: 0 }, { x: 0, y: 0 }, zoom)
       return
     }
     const anchor = point(event)
@@ -82,6 +96,6 @@ export function bindMapView(arena: HTMLElement, aspect: number) {
     })
   }
 
-  new ResizeObserver(render).observe(arena)
+  scene.scale.on('resize', render)
   render()
 }

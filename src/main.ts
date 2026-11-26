@@ -8,8 +8,7 @@ import './style.css'
 const width = 2172
 const height = Math.round(width * FRUIT_ISLAND.height / FRUIT_ISLAND.width)
 const arena = document.querySelector<HTMLElement>('.arena')!
-arena.style.setProperty('--water-ratio', String(FRUIT_ISLAND.waterY / FRUIT_ISLAND.height))
-bindMapView(arena, width / height)
+const waterY = height * FRUIT_ISLAND.waterY / FRUIT_ISLAND.height
 
 const clouds = Array.from(arena.querySelectorAll<HTMLElement>('.clouds span'))
 const lanes = clouds.map((_, index) => index)
@@ -37,6 +36,7 @@ class Arena extends Phaser.Scene {
   create() {
     if (!this.textures.exists('terrain-art')) return
     this.add.image(0, 0, 'terrain-art').setOrigin(0).setDisplaySize(width, height)
+    bindMapView(arena, this, width, height, waterY)
   }
 }
 
@@ -47,6 +47,6 @@ new Phaser.Game({
   height,
   parent: 'field',
   scene: Arena,
-  scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+  scale: { mode: Phaser.Scale.RESIZE },
   audio: { noAudio: true },
 })

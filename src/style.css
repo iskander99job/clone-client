@@ -87,11 +87,10 @@ body { margin: 0 }
 #field { inset-block: 0 }
 #field canvas {
   display: block;
-  transform: translate(var(--map-pan-x, 0px), var(--map-pan-y, 0px)) scale(var(--map-zoom, 1));
 }
 
 .water {
-  top: calc(50% + var(--map-pan-y, 0px) + var(--map-height) * var(--map-zoom, 1) * (var(--water-ratio, .825) - .5));
+  top: var(--water-top, calc(50% + var(--map-height) * .325));
   bottom: 0;
   border-top: 2px solid #c0fff5d9;
   background: linear-gradient(#12b8c787, #006d9d calc(var(--map-height) * .175));
