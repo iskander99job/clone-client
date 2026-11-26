@@ -48,25 +48,25 @@ body { margin: 0 }
 }
 
 .clouds span:nth-child(1) {
-  --x: 6%; --y: 10%; --width: 10vw; --opacity: .76; --duration: 160s; --delay: -33s;
+  --y: 10%; --width: 10vw; --opacity: .76;
 }
 .clouds span:nth-child(2) {
-  --x: 30%; --y: 28%; --width: 5.5vw; --opacity: .55; --duration: 215s; --delay: -77s;
+  --y: 28%; --width: 5.5vw; --opacity: .55;
 }
 .clouds span:nth-child(3) {
-  --x: 62%; --y: 20%; --width: 7.5vw; --opacity: .64; --duration: 185s; --delay: -123s;
+  --y: 20%; --width: 7.5vw; --opacity: .64;
 }
 .clouds span:nth-child(4) {
-  --x: 78%; --y: 7%; --width: 9vw; --opacity: .71; --duration: 235s; --delay: -190s;
+  --y: 7%; --width: 9vw; --opacity: .71;
 }
 
 .clouds .cloud-puff {
-  --x: 44%; --y: 13%; --width: 6.5vw; --opacity: .65; --duration: 198s; --delay: -98s;
+  --y: 13%; --width: 6.5vw; --opacity: .65;
   aspect-ratio: 420 / 107;
   background-image: url('./assets/cloud-puff.webp');
 }
 .clouds .cloud-wisp {
-  --x: 9%; --y: 34%; --width: 11vw; --opacity: .54; --duration: 258s; --delay: -64s;
+  --y: 34%; --width: 11vw; --opacity: .54;
   aspect-ratio: 420 / 91;
   background-image: url('./assets/cloud-wisp.webp');
 }
