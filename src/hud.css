@@ -139,6 +139,8 @@
 
 .direction-pad {
   grid-template-areas: ". up ." "left down right";
+  margin-inline-start: clamp(8px, 2vw, 36px);
+  margin-bottom: clamp(6px, 3.5vh, 26px);
 }
 .up { grid-area: up; }
 .left { grid-area: left; }
