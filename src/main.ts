@@ -52,8 +52,8 @@ class Arena extends Phaser.Scene {
     const terrain = vector ?? createRasterTerrain(this, width, height)
     const actors = createSvgViewport(this, 'vector-actors')
     field.append(actors.svg)
-    bindMapView(arena, this, width, height, waterY, (left, top, visibleWidth, visibleHeight, preview) => {
-      vector?.updateView(left, top, visibleWidth, visibleHeight, preview)
+    bindMapView(arena, this, width, height, waterY, (left, top, visibleWidth, visibleHeight) => {
+      vector?.updateView(left, top, visibleWidth, visibleHeight)
       actors.updateView(left, top, visibleWidth, visibleHeight)
     })
     // Phaser RESIZE measures the transformed bounding box. Use the actual layout size instead.

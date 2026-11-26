@@ -10,7 +10,7 @@ export function bindMapView(
   mapWidth: number,
   mapHeight: number,
   waterY: number,
-  updateTerrainView?: (left: number, top: number, width: number, height: number, preview: boolean) => void,
+  updateTerrainView?: (left: number, top: number, width: number, height: number) => void,
 ) {
   const camera = scene.cameras.main
   const portrait = matchMedia('(orientation: portrait)')
@@ -27,7 +27,7 @@ export function bindMapView(
     return clamp(value, mapSize / 2 - limit, mapSize / 2 + limit)
   }
 
-  function render(preview = false) {
+  function render() {
     const scale = cameraZoom()
     if (scale <= 0) return
     center.x = boundCenter(center.x, mapWidth, camera.width / scale)
@@ -36,12 +36,12 @@ export function bindMapView(
     camera.setZoom(scale).centerOn(center.x, center.y)
     const mapLeft = camera.width / 2 - center.x * scale
     const mapTop = camera.height / 2 - center.y * scale
-    updateTerrainView?.(-mapLeft / scale, -mapTop / scale, camera.width / scale, camera.height / scale, preview)
+    updateTerrainView?.(-mapLeft / scale, -mapTop / scale, camera.width / scale, camera.height / scale)
     const waterTop = camera.height / 2 + (waterY - center.y) * scale
     arena.style.setProperty('--water-top', `${waterTop}px`)
   }
 
-  function moveView(from: Point, to: Point, requestedZoom: number, preview = false) {
+  function moveView(from: Point, to: Point, requestedZoom: number) {
     const previousScale = cameraZoom()
     if (previousScale <= 0) return
     const nextScale = cameraZoom(requestedZoom)
@@ -50,7 +50,7 @@ export function bindMapView(
     zoom = requestedZoom
     center.x += from.x / previousScale - to.x / nextScale
     center.y += from.y / previousScale - to.y / nextScale
-    render(preview)
+    render()
   }
 
   function point(event: MouseEvent): Point {
@@ -97,15 +97,12 @@ export function bindMapView(
     pointers.set(event.pointerId, point(event))
     const after = gesture()
     const ratio = before.distance > 0 ? after.distance / before.distance : 1
-    moveView(before.center, after.center, zoom * ratio, true)
+    moveView(before.center, after.center, zoom * ratio)
   })
 
   for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {
     arena.addEventListener(type, event => {
-      if (pointers.delete(event.pointerId) && !pointers.size) {
-        delete arena.dataset.panning
-        render()
-      }
+      if (pointers.delete(event.pointerId) && !pointers.size) delete arena.dataset.panning
     })
   }
 
