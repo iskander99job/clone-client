@@ -6,7 +6,8 @@
 }
 * { box-sizing: border-box }
 body { margin: 0; min-width: 280px }
-.game { width: min(100%, 640px, calc((100svh - 234px) * 1.24)); min-width: min(100%, 340px); margin: auto; padding: 12px }
+.game { width: 100%; margin: auto; padding-block: 12px }
+header, .score, .controls { max-width: 840px; margin-inline: auto; padding-inline: 12px }
 header, .score { display: flex; align-items: center; justify-content: space-between; gap: 12px }
 header { margin-bottom: 10px }
 h1 { margin: 0; line-height: 1.02; font-weight: 950; font-size: clamp(30px, 7vw, 44px); letter-spacing: -.055em }
@@ -23,8 +24,8 @@ progress { appearance: none; grid-column: span 2; width: 100%; height: 6px; bord
 progress::-webkit-progress-bar { background: #263746 }
 progress::-webkit-progress-value { background: var(--team) }
 progress::-moz-progress-bar { background: var(--team) }
-.arena { position: relative; background: #223e50; overflow: hidden; border-radius: 16px }
-#field { aspect-ratio: 640 / 510 }
+.arena { position: relative; background: #223e50; overflow: hidden }
+#field { aspect-ratio: 3 / 1 }
 canvas { display: block; width: 100%; height: auto }
 #status { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); margin: 0; padding: 7px 12px; border-radius: 20px; background: #101a24; font-size: 14px; font-weight: 800; white-space: nowrap; pointer-events: none }
 .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; margin-top: 8px }

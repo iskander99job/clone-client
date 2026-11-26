@@ -14,9 +14,9 @@ export const MAX_WIND = 90
 function rollWind() {
   return (Math.floor(Math.random() * 7) - 3) * (MAX_WIND / 3)
 }
-const columns = WIDTH / CELL
-const rows = HEIGHT / CELL
-const getContours = contours().size([columns, rows]).thresholds([0.5]).smooth(false)
+export const FRUIT_ISLAND = {
+  width: 1440, height: 480, waterY: 396, spawn: [173, 1260], shotSpeed: 1.5,
+}
 
 export type Point = { x: number; y: number }
 export type FighterState = { position: Point; velocity: Point; hp: number; direction: number }
@@ -38,17 +38,25 @@ export const aim = (angle: number, direction: number) => ({
   y: -Math.sin(angle * Math.PI / 180),
 })
 
-export function terrainMaskFromPixels(rgba: Uint8ClampedArray) {
+export function terrainMaskFromPixels(rgba: Uint8ClampedArray, width = WIDTH, height = HEIGHT) {
+  const columns = width / CELL
+  const rows = height / CELL
   return Array.from({ length: columns * rows }, (_, index) => {
     const x = index % columns * CELL + CELL / 2
     const y = Math.floor(index / columns) * CELL + CELL / 2
-    return Number(rgba[(y * WIDTH + x) * 4 + 3] >= 128)
+    return Number(rgba[(y * width + x) * 4 + 3] >= 128)
   })
 }
 
 export class Duel {
   world = new RAPIER.World({ x: 0, y: GRAVITY })
-  mask = new Array<number>(columns * rows).fill(0)
+  mask: number[]
+  readonly width: number
+  readonly height: number
+  private readonly columns: number
+  private readonly rows: number
+  private readonly waterY?: number
+  private readonly shotSpeed: number
   rings: number[][][] = []
   fighters: [Fighter, Fighter]
   terrain: RAPIER.Collider[] = []
@@ -70,7 +78,15 @@ export class Duel {
 
   readonly online: boolean
 
-  constructor(online = false, terrainMask?: number[]) {
+  constructor(online = false, terrainMask?: number[], map?: typeof FRUIT_ISLAND) {
+    this.width = map?.width ?? WIDTH
+    this.height = map?.height ?? HEIGHT
+    this.columns = this.width / CELL
+    this.rows = this.height / CELL
+    this.waterY = map?.waterY
+    this.shotSpeed = map?.shotSpeed ?? 1
+    const { columns, rows } = this
+    this.mask = new Array<number>(columns * rows).fill(0)
     this.online = online
     this.world.timestep = STEP
     this.world.lengthUnit = 32
@@ -84,7 +100,7 @@ export class Duel {
       }
     }
     this.rebuildTerrain()
-    this.fighters = [this.createFighter(83, 1), this.createFighter(556, -1)]
+    this.fighters = [this.createFighter(map?.spawn[0] ?? 83, 1), this.createFighter(map?.spawn[1] ?? 556, -1)]
     for (let i = 0; i < 35; i++) this.world.step()
   }
 
@@ -126,10 +142,11 @@ export class Duel {
   }
 
   createFighter(x: number, direction: number): Fighter {
+    const { columns } = this
     const column = Math.floor(x / CELL)
     const surface = this.mask.findIndex((solid, index) => solid === 1 && index % columns === column)
     const groundY = this.online ? groundHeight(x)
-      : surface < 0 ? HEIGHT : Math.floor(surface / columns) * CELL
+      : surface < 0 ? this.height : Math.floor(surface / columns) * CELL
     const body = this.world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic().setTranslation(x, groundY - RADIUS - 4)
         .lockRotations().setLinearDamping(0.18).setCcdEnabled(true),
@@ -140,6 +157,7 @@ export class Duel {
 
   rebuildTerrain() {
     for (const collider of this.terrain) this.world.removeCollider(collider, true)
+    const getContours = contours().size([this.columns, this.rows]).thresholds([0.5]).smooth(false)
     this.rings = getContours(this.mask).flatMap(({ coordinates }) => coordinates.flat())
     this.terrain = this.rings.map(ring => {
       const vertices = new Float32Array(ring.flatMap(point => point.map(coordinate => coordinate * CELL)))
@@ -149,6 +167,7 @@ export class Duel {
   }
 
   solid(x: number, y: number) {
+    const { columns, rows } = this
     const column = Math.floor(x / CELL)
     const row = Math.floor(y / CELL)
     return column >= 0 && column < columns && row >= 0 && row < rows && this.mask[row * columns + column] === 1
@@ -165,7 +184,7 @@ export class Duel {
     const fighter = this.fighters[this.turn]
     const origin = this.muzzle(fighter, angle)
     const direction = aim(angle, fighter.direction)
-    const speed = 120 + power * 5.6
+    const speed = (120 + power * 5.6) * this.shotSpeed
     this.phase = 'flight'
     this.elapsed = 0
     this.trail = [origin]
@@ -189,7 +208,7 @@ export class Duel {
     this.world.step()
     for (const fighter of this.fighters) {
       const point = fighter.body.translation()
-      if (point.y > HEIGHT + 65 || point.x < -90 || point.x > WIDTH + 90) fighter.hp = 0
+      if (point.y >= (this.waterY ?? this.height + 65) || point.x < -90 || point.x > this.width + 90) fighter.hp = 0
     }
     if (previous && this.rocket) {
       const current = this.rocket.translation()
@@ -207,7 +226,7 @@ export class Duel {
       }
       this.trail.push(current)
       if (this.trail.length > 22) this.trail.shift()
-      if (current.x < -60 || current.x > WIDTH + 60 || current.y > HEIGHT + 50 || this.elapsed > 6) {
+      if (current.x < -60 || current.x > this.width + 60 || current.y >= (this.waterY ?? this.height + 50) || this.elapsed > 6) {
         this.finishFlight()
       }
     }
@@ -224,6 +243,7 @@ export class Duel {
   }
 
   explode(point: Point) {
+    const { columns, rows } = this
     this.blast = point
     this.blastAge = 0
     for (let y = Math.max(0, Math.floor((point.y - BLAST) / CELL)); y < Math.min(rows, (point.y + BLAST) / CELL); y++) {
@@ -280,13 +300,13 @@ export class Duel {
       const start = this.muzzle(bot, angle)
       const direction = aim(angle, bot.direction)
       for (let power = 22; power <= 100; power += 3) {
-        const speed = 120 + power * 5.6
-        for (let t = 0; t < 4; t += 1 / 90) {
+        const speed = (120 + power * 5.6) * this.shotSpeed
+        for (let t = 0; t < (this.waterY === undefined ? 4 : 6); t += 1 / 90) {
           const point = {
             x: start.x + direction.x * speed * t + this.wind * t * t / 2,
             y: start.y + direction.y * speed * t + GRAVITY * t * t / 2,
           }
-          if (point.x < 0 || point.x > WIDTH || point.y > HEIGHT) break
+          if (point.x < 0 || point.x > this.width || point.y >= (this.waterY ?? this.height)) break
           const gap = distance(point, target)
           if (this.solid(point.x, point.y) || gap < RADIUS + 5) {
             const score = gap + Math.max(0, 100 - distance(point, center)) * 2 + t * 2

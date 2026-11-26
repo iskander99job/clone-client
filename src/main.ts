@@ -1,7 +1,11 @@
 import Phaser from 'phaser'
-import { aim, CELL, Duel, HEIGHT, initPhysics, MAX_WIND, RADIUS, WIDTH, terrainMaskFromPixels, type Fighter } from './duel'
-import terrainUrl from './assets/terrain.png'
+import { aim, CELL, Duel, FRUIT_ISLAND, initPhysics, MAX_WIND, RADIUS, terrainMaskFromPixels, type Fighter } from './duel'
+import terrainUrl from './assets/fruit-island.png'
+import orchardUrl from './assets/fruit-orchard.webp'
+
 import './style.css'
+
+const { width: WIDTH, height: HEIGHT, waterY } = FRUIT_ISLAND
 
 const status = document.querySelector<HTMLParagraphElement>('#status')!
 const wind = document.querySelector<HTMLParagraphElement>('#wind')!
@@ -28,11 +32,12 @@ class Arena extends Phaser.Scene {
 
   preload() {
     this.load.image('terrain-art', terrainUrl)
+    this.load.image('orchard', orchardUrl)
   }
 
   create() {
     const terrain = this.textures.get('terrain-art').getSourceImage()
-    if (!this.textures.exists('terrain-art') || !(terrain instanceof HTMLImageElement)) {
+    if (!this.textures.exists('orchard') || !this.textures.exists('terrain-art') || !(terrain instanceof HTMLImageElement)) {
       status.textContent = 'Не удалось загрузить карту'
       return
     }
@@ -42,37 +47,22 @@ class Arena extends Phaser.Scene {
     pixels.height = HEIGHT
     const context = pixels.getContext('2d')!
     context.drawImage(this.terrainImage, 0, 0, WIDTH, HEIGHT)
-    this.initialMask = terrainMaskFromPixels(context.getImageData(0, 0, WIDTH, HEIGHT).data)
-    const sky = this.textures.createCanvas('sky', WIDTH, HEIGHT)!
-    const ctx = sky.context
-    const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT)
-    gradient.addColorStop(0, '#203c55')
-    gradient.addColorStop(1, '#d29880')
-    ctx.fillStyle = gradient
-    ctx.fillRect(0, 0, WIDTH, HEIGHT)
-    ctx.fillStyle = '#ffd88c'
-    ctx.beginPath()
-    ctx.arc(495, 121, 43, 0, Math.PI * 2)
-    ctx.fill()
-    for (let i = 0; i < 34; i++) {
-      ctx.fillStyle = i % 3 ? '#b3d5df80' : '#f6e6ba'
-      ctx.fillRect((i * 137 + 27) % WIDTH, (i * 59 + 12) % 222, i % 4 ? 2 : 3, 2)
-    }
-    for (let layer = 0; layer < 3; layer++) {
-      ctx.fillStyle = ['#5a637b', '#40566b', '#2e4858'][layer]
-      ctx.beginPath()
-      ctx.moveTo(0, HEIGHT)
-      for (let x = 0; x <= WIDTH; x += 20) {
-        ctx.lineTo(x, 236 + layer * 28 + 36 * Math.sin(x / (67 - layer * 8) + layer * 1.5) + 12 * Math.cos(x / 22))
-      }
-      ctx.lineTo(WIDTH, HEIGHT)
-      ctx.fill()
-    }
-    sky.refresh()
-    this.add.image(0, 0, 'sky').setOrigin(0)
+    this.initialMask = terrainMaskFromPixels(context.getImageData(0, 0, WIDTH, HEIGHT).data, WIDTH, HEIGHT)
+    this.add.image(0, 0, 'orchard').setOrigin(0).setDisplaySize(WIDTH, HEIGHT)
     this.ground = this.textures.createCanvas('ground', WIDTH, HEIGHT)!
     this.add.image(0, 0, 'ground').setOrigin(0)
     this.action = this.add.graphics()
+    const water = this.textures.createCanvas('water', 2, HEIGHT - waterY)!
+    const waterContext = water.context
+    const fill = waterContext.createLinearGradient(0, 0, 0, HEIGHT - waterY)
+    fill.addColorStop(0, 'rgba(18, 184, 199, 0.53)')
+    fill.addColorStop(1, '#006d9d')
+    waterContext.fillStyle = fill
+    waterContext.fillRect(0, 0, 2, HEIGHT - waterY)
+    waterContext.fillStyle = 'rgba(192, 255, 245, 0.85)'
+    waterContext.fillRect(0, 0, 2, 2)
+    water.refresh()
+    this.add.image(0, waterY, 'water').setOrigin(0).setDisplaySize(WIDTH, HEIGHT - waterY)
     this.newMatch()
     restart.addEventListener('click', () => this.newMatch())
     fire.addEventListener('click', () => {
@@ -87,7 +77,7 @@ class Arena extends Phaser.Scene {
 
   newMatch() {
     this.duel?.world.free()
-    this.duel = new Duel(false, this.initialMask)
+    this.duel = new Duel(false, this.initialMask, FRUIT_ISLAND)
     this.accumulator = 0
     this.drawnRevision = 0
     angle.value = String(this.duel.angle)
