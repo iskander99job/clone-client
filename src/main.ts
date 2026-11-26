@@ -4,7 +4,10 @@ import orchardUrl from './assets/fruit-orchard.webp'
 import { FRUIT_ISLAND } from './fruit-island.ts'
 import './style.css'
 
-const { width, height, waterY } = FRUIT_ISLAND
+// Render at the artwork's native resolution, with the waterline in map coordinates.
+const width = 2172
+const height = Math.round(width * FRUIT_ISLAND.height / FRUIT_ISLAND.width)
+const waterY = Math.round(height * FRUIT_ISLAND.waterY / FRUIT_ISLAND.height)
 
 class Arena extends Phaser.Scene {
   preload() {
@@ -27,7 +30,7 @@ class Arena extends Phaser.Scene {
     context.fillStyle = fill
     context.fillRect(0, 0, 2, waterHeight)
     context.fillStyle = 'rgba(192, 255, 245, 0.85)'
-    context.fillRect(0, 0, 2, 2)
+    context.fillRect(0, 0, 2, Math.round(2 * height / FRUIT_ISLAND.height))
     water.refresh()
     this.add.image(0, waterY, 'water').setOrigin(0).setDisplaySize(width, waterHeight)
   }
