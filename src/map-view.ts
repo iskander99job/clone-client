@@ -20,8 +20,8 @@ export function bindMapView(
     return Math.min(camera.width / mapWidth, camera.height / mapHeight) * zoom
   }
 
-  function boundCenter(value: number, mapSize: number, viewSize: number) {
-    const limit = Math.max(0, (mapSize - viewSize) / 2)
+  function boundCenter(value: number, mapSize: number, viewSize: number, extraTravel = 0) {
+    const limit = Math.max(0, (mapSize - viewSize) / 2) + extraTravel
     return clamp(value, mapSize / 2 - limit, mapSize / 2 + limit)
   }
 
@@ -29,7 +29,8 @@ export function bindMapView(
     const scale = cameraZoom()
     if (scale <= 0) return
     center.x = boundCenter(center.x, mapWidth, camera.width / scale)
-    center.y = boundCenter(center.y, mapHeight, camera.height / scale)
+    const verticalTravel = Math.min(camera.height * 0.08, 64) / scale
+    center.y = boundCenter(center.y, mapHeight, camera.height / scale, verticalTravel)
     camera.setZoom(scale).centerOn(center.x, center.y)
     const waterTop = camera.height / 2 + (waterY - center.y) * scale
     arena.style.setProperty('--water-top', `${waterTop}px`)
