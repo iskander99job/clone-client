@@ -133,6 +133,7 @@ body { margin: 0 }
 }
 
 .arena[data-map="quarry"] .orchard,
+.arena[data-map="fruit-foreground"] .orchard,
 .arena[data-map="flat"] .orchard {
   display: none;
 }

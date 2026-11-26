@@ -1,4 +1,5 @@
 import flatUrl from './assets/flat-test.png'
+import fruitForegroundUrl from './assets/fruit-island.svg'
 import fruitUrl from './assets/fruit-island.png'
 import fruit2xUrl from './assets/fruit-island-2x.webp'
 import quarryUrl from './assets/stone-quarry.webp'
@@ -24,6 +25,14 @@ export const FLAT_TEST: ArenaMap = {
   art: flatUrl,
   mask: flatUrl,
   fighterSize: 70,
+}
+
+export const FRUIT_FOREGROUND: ArenaMap = {
+  ...FLAT_TEST,
+  title: 'Фруктовая карта',
+  art: fruitForegroundUrl,
+  mask: fruitForegroundUrl,
+  spawn: [875, 1735],
 }
 
 export const STONE_QUARRY: ArenaMap = {

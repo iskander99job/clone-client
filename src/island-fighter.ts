@@ -12,7 +12,7 @@ export function loadIslandFighter(scene: Phaser.Scene) {
 
 export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement, map: ArenaMap, terrain: Phaser.GameObjects.Image) {
   const { width, height, waterY } = map
-  if (!scene.textures.exists('terrain-mask')) throw new Error('PNG карты не загружен')
+  if (!scene.textures.exists('terrain-mask')) throw new Error('Маска карты не загружена')
   const source: unknown = scene.textures.get('terrain-mask').getSourceImage()
   if (!(source instanceof HTMLImageElement || source instanceof HTMLCanvasElement || source instanceof ImageBitmap)) {
     throw new Error('Неподдерживаемый формат изображения карты')
