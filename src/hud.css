@@ -107,37 +107,6 @@
   white-space: nowrap;
 }
 
-.turn {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: clamp(4px, 1vw, 10px);
-}
-
-.turn-track {
-  position: absolute;
-  left: 50%;
-  width: clamp(0px, calc((100vw - 420px) / 4), 176px);
-  height: 8px;
-  transform: translateX(-50%);
-  border-radius: 4px;
-  background: #f4ca7680;
-  box-shadow: 0 0 0 1px var(--hud-line);
-}
-
-.turn-clock {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: clamp(31px, 5vw, 56px);
-  aspect-ratio: 1;
-  border: 2px solid #f4ca76;
-  border-radius: 50%;
-  background: var(--hud-glass);
-  font-size: clamp(15px, 2.7vw, 28px);
-  font-variant-numeric: tabular-nums;
-}
-
 .hud-button {
   display: grid;
   place-items: center;
@@ -165,12 +134,6 @@
 @media (prefers-reduced-motion: reduce) {
   .hud-button { transition: none; }
   .hud-button:active { transform: none; }
-}
-
-.flag {
-  position: relative;
-  width: clamp(26px, 3.5vw, 42px);
-  font-size: clamp(17px, 2.4vw, 27px);
 }
 
 .direction-pad,
