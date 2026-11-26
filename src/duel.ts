@@ -5,9 +5,9 @@ export const WIDTH = 640
 export const HEIGHT = 510
 export const CELL = 2
 export const RADIUS = 31
+export const initPhysics = () => RAPIER.init()
 const GRAVITY = 370
 const BLAST = 67
-const BULLET_CRATER = 10
 const STEP = 1 / 60
 export const MAX_WIND = 90
 
@@ -19,11 +19,16 @@ const rows = HEIGHT / CELL
 const getContours = contours().size([columns, rows]).thresholds([0.5]).smooth(false)
 
 export type Point = { x: number; y: number }
-export type Fighter = { hp: number; body: RAPIER.RigidBody; direction: number }
-export type Weapon = 'bazooka' | 'uzi'
-const BURST_SPREAD = [-2, 1, 0, -1, 2]
-const BURST_INTERVAL = 0.08
+export type FighterState = { position: Point; velocity: Point; hp: number; direction: number }
+export type MatchState = {
+  mask: string; fighters: [FighterState, FighterState]; turn: number; wind: number
+  finished: boolean; winner: number | null
+}
+export type ReplayFrame = {
+  positions: [Point, Point]; rocket?: { position: Point; velocity: Point }; blast?: Point
+}
 
+export type Fighter = { hp: number; body: RAPIER.RigidBody; direction: number }
 type Phase = 'aim' | 'bot' | 'flight' | 'settle' | 'over'
 
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y)
@@ -41,9 +46,6 @@ export class Duel {
   terrain: RAPIER.Collider[] = []
   phase: Phase = 'aim'
   turn = 0
-  weapon: Weapon = 'bazooka'
-  burst?: { angle: number; fired: number }
-  tracers: { start: Point; end: Point; age: number; hit: boolean }[] = []
   angle = 47
   power = 49
   botAngle = 48
@@ -58,7 +60,10 @@ export class Duel {
   wind = rollWind()
   winner: number | null = null
 
-  constructor() {
+  readonly online: boolean
+
+  constructor(online = false) {
+    this.online = online
     this.world.timestep = STEP
     this.world.lengthUnit = 32
     for (let y = 0; y < rows; y++) {
@@ -69,6 +74,43 @@ export class Duel {
     this.rebuildTerrain()
     this.fighters = [this.createFighter(83, 1), this.createFighter(556, -1)]
     for (let i = 0; i < 35; i++) this.world.step()
+  }
+
+  snapshot(): MatchState {
+    const state = ({ body, hp, direction }: Fighter): FighterState => ({
+      position: body.translation(), velocity: body.linvel(), hp, direction,
+    })
+    return {
+      mask: this.mask.join(''), fighters: [state(this.fighters[0]), state(this.fighters[1])],
+      turn: this.turn, wind: this.wind, finished: this.phase === 'over', winner: this.winner,
+    }
+  }
+
+  restore(state: MatchState) {
+    this.mask = Array.from(state.mask, Number)
+    this.rebuildTerrain()
+    this.fighters.forEach((fighter, index) => {
+      const saved = state.fighters[index]
+      fighter.hp = saved.hp
+      fighter.direction = saved.direction
+      fighter.body.setTranslation(saved.position, true)
+      fighter.body.setLinvel(saved.velocity, true)
+    })
+    this.turn = state.turn
+    this.wind = state.wind
+    this.winner = state.winner
+    this.phase = state.finished ? 'over' : 'aim'
+    this.elapsed = 0
+    this.trail = []
+    this.blast = undefined
+  }
+
+  replayFrame(): ReplayFrame {
+    return {
+      positions: [this.fighters[0].body.translation(), this.fighters[1].body.translation()],
+      rocket: this.rocket && { position: this.rocket.translation(), velocity: this.rocket.linvel() },
+      blast: this.blast,
+    }
   }
 
   createFighter(x: number, direction: number): Fighter {
@@ -96,21 +138,14 @@ export class Duel {
     return column >= 0 && column < columns && row >= 0 && row < rows && this.mask[row * columns + column] === 1
   }
 
-  muzzle(fighter: Fighter, angle: number, weapon: Weapon = 'bazooka') {
+  muzzle(fighter: Fighter, angle: number) {
     const origin = fighter.body.translation()
     const vector = aim(angle, fighter.direction)
-    const reach = weapon === 'uzi' ? 40 : 48
-    return { x: origin.x + vector.x * reach, y: origin.y + vector.y * reach }
+    return { x: origin.x + vector.x * 48, y: origin.y + vector.y * 48 }
   }
 
-  fire(angle: number, power: number, weapon: Weapon = 'bazooka') {
+  fire(angle: number, power: number) {
     if (this.phase !== 'aim' && this.phase !== 'bot') return
-    if (weapon === 'uzi') {
-      this.phase = 'flight'
-      this.elapsed = 0
-      this.burst = { angle, fired: 0 }
-      return
-    }
     const fighter = this.fighters[this.turn]
     const origin = this.muzzle(fighter, angle)
     const direction = aim(angle, fighter.direction)
@@ -130,45 +165,12 @@ export class Duel {
     this.rocket.addForce({ x: this.rocket.mass() * this.wind, y: 0 }, true)
   }
 
-  fireBullet(angle: number) {
-    const shooter = this.fighters[this.turn]
-    const target = this.fighters[1 - this.turn]
-    const start = this.muzzle(shooter, angle, 'uzi')
-    const direction = aim(angle, shooter.direction)
-    const ray = new RAPIER.Ray(start, direction)
-    const range = 720
-    const blocked = this.solid(start.x, start.y)
-    const hit = blocked ? null : this.world.castRay(
-      ray, range, true, undefined, undefined, undefined, shooter.body,
-    )
-    const end = ray.pointAt(blocked ? 0 : hit?.timeOfImpact ?? range)
-    const hitBody = hit?.collider.parent()
-    if (blocked || (hit && !hitBody)) {
-      this.carveTerrain(end, BULLET_CRATER)
-    } else if (hitBody?.handle === target.body.handle) {
-      target.hp = Math.max(0, target.hp - 8)
-    }
-    this.tracers.push({ start, end, age: 0, hit: blocked || hit !== null })
-  }
-
   tick() {
     if (this.phase === 'over') return
     this.elapsed += STEP
     this.blastAge += STEP
     const previous = this.rocket?.translation()
     this.world.step()
-    this.tracers = this.tracers.filter(tracer => {
-      tracer.age += STEP
-      return tracer.age < 0.16
-    })
-    if (this.burst && this.elapsed >= this.burst.fired * BURST_INTERVAL) {
-      this.fireBullet(this.burst.angle + BURST_SPREAD[this.burst.fired])
-      this.burst.fired++
-      if (this.burst.fired === BURST_SPREAD.length) {
-        this.burst = undefined
-        this.finishFlight()
-      }
-    }
     for (const fighter of this.fighters) {
       const point = fighter.body.translation()
       if (point.y > HEIGHT + 65 || point.x < -90 || point.x > WIDTH + 90) fighter.hp = 0
@@ -205,24 +207,17 @@ export class Duel {
     }
   }
 
-  carveTerrain(point: Point, radius: number) {
-    let changed = false
-    for (let y = Math.max(0, Math.floor((point.y - radius) / CELL)); y < Math.min(rows, (point.y + radius) / CELL); y++) {
-      for (let x = Math.max(0, Math.floor((point.x - radius) / CELL)); x < Math.min(columns, (point.x + radius) / CELL); x++) {
-        const index = y * columns + x
-        if (this.mask[index] && distance(point, { x: (x + 0.5) * CELL, y: (y + 0.5) * CELL }) < radius) {
-          this.mask[index] = 0
-          changed = true
-        }
-      }
-    }
-    if (changed) this.rebuildTerrain()
-  }
-
   explode(point: Point) {
     this.blast = point
     this.blastAge = 0
-    this.carveTerrain(point, BLAST)
+    for (let y = Math.max(0, Math.floor((point.y - BLAST) / CELL)); y < Math.min(rows, (point.y + BLAST) / CELL); y++) {
+      for (let x = Math.max(0, Math.floor((point.x - BLAST) / CELL)); x < Math.min(columns, (point.x + BLAST) / CELL); x++) {
+        if (distance(point, { x: (x + 0.5) * CELL, y: (y + 0.5) * CELL }) < BLAST) {
+          this.mask[y * columns + x] = 0
+        }
+      }
+    }
+    this.rebuildTerrain()
     for (const fighter of this.fighters) {
       const center = fighter.body.translation()
       const separation = distance(point, center)
@@ -256,7 +251,7 @@ export class Duel {
     bot.direction = -player.direction
     this.turn = 1 - this.turn
     this.wind = rollWind()
-    this.phase = this.turn === 0 ? 'aim' : 'bot'
+    this.phase = this.online || this.turn === 0 ? 'aim' : 'bot'
     this.elapsed = 0
   }
 

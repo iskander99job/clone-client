@@ -9,27 +9,27 @@
 <body>
   <main class="game">
     <header>
-      <div><div class="kicker">ДУЭЛЬ С БОТОМ</div><h1>Кратер</h1></div>
+      <div><div id="mode" class="kicker">ДУЭЛЬ С БОТОМ</div><h1>Кратер</h1></div>
       <button id="restart" type="button">Заново</button>
     </header>
+    <div class="online">
+      <button id="online" type="button" disabled>Позвать друга</button>
+      <button id="skip" type="button" hidden>Пропустить повтор</button>
+      <label id="invite-control" hidden>Ссылка для друга<input id="invite" type="url" readonly></label>
+      <p id="connection" role="status" hidden></p>
+    </div>
     <div class="score">
-      <div class="fighter player"><span>Мята · ты</span><strong id="player-hp">100</strong><progress id="player-bar" max="100" value="100" aria-label="Здоровье Мяты"></progress></div>
-      <div class="fighter bot"><span>Искра · бот</span><strong id="bot-hp">100</strong><progress id="bot-bar" max="100" value="100" aria-label="Здоровье Искры"></progress></div>
+      <div class="fighter player"><span id="player-name">Мята · ты</span><strong id="player-hp">100</strong><progress id="player-bar" max="100" value="100" aria-label="Здоровье Мяты"></progress></div>
+      <div class="fighter bot"><span id="bot-name">Искра · бот</span><strong id="bot-hp">100</strong><progress id="bot-bar" max="100" value="100" aria-label="Здоровье Искры"></progress></div>
     </div>
     <section class="arena" aria-label="Поле боя">
       <div id="field"></div>
       <p id="status" role="status">Загрузка…</p>
     </section>
     <div class="controls">
-      <label class="weapon">Оружие
-        <select id="weapon" disabled>
-          <option value="bazooka">Базука</option>
-          <option value="uzi">Узи</option>
-        </select>
-      </label>
       <p id="wind" class="wind">Ветер: —</p>
       <label>Угол <output id="angle-value" for="angle">47°</output><input id="angle" type="range" min="12" max="84" value="47" disabled></label>
-      <label id="power-control">Сила <output id="power-value" for="power">49%</output><input id="power" type="range" min="15" max="100" value="49" disabled></label>
+      <label>Сила <output id="power-value" for="power">49%</output><input id="power" type="range" min="15" max="100" value="49" disabled></label>
       <button id="fire" type="button" disabled>Выстрелить</button>
     </div>
   </main>
