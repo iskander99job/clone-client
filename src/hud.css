@@ -30,6 +30,7 @@
 
 .fighter {
   --health-fill: #a4e279;
+  --health-progress: #69c950;
   display: flex;
   align-items: center;
   gap: clamp(4px, 1vw, 10px);
@@ -39,6 +40,7 @@
 
 .fighter-bot {
   --health-fill: #f0a772;
+  --health-progress: #ed5268;
   flex-direction: row-reverse;
   text-align: right;
 }
@@ -56,18 +58,20 @@
   font-size: clamp(19px, 3.7vw, 40px);
 }
 
-.fighter-stats { flex: 1; min-width: 0; }
+.fighter-stats { align-self: start; flex: 1; min-width: 0; }
 
 .health {
   position: relative;
   display: grid;
-  place-items: center;
-  height: clamp(17px, 2.7vw, 26px);
+  align-items: center;
+  justify-items: start;
+  height: clamp(18px, 2.5vw, 30px);
   overflow: hidden;
   border: 1px solid var(--hud-line);
-  border-radius: 999px;
-  background: var(--hud-glass);
-  font-size: clamp(9px, 1.3vw, 14px);
+  background: #eaf6ff20;
+  color: #fff;
+  font-size: clamp(9px, 1.7vw, 20px);
+  font-weight: 850;
   white-space: nowrap;
 }
 
@@ -78,19 +82,18 @@
   height: 100%;
   appearance: none;
   border: 0;
-  border-radius: 4px;
   background: transparent;
-  accent-color: var(--health-fill);
+  accent-color: var(--health-progress);
 }
 
+.fighter-bot .health { justify-items: end; }
 .fighter-bot progress { direction: rtl; }
 .health progress::-webkit-progress-bar { background: transparent; }
-.health progress::-webkit-progress-value { background: color-mix(in srgb, var(--health-fill) 48%, transparent); }
-.health progress::-moz-progress-bar { background: color-mix(in srgb, var(--health-fill) 48%, transparent); }
+.health progress::-webkit-progress-value { background: color-mix(in srgb, var(--health-progress) 80%, transparent); }
+.health progress::-moz-progress-bar { background: color-mix(in srgb, var(--health-progress) 80%, transparent); }
 .health span {
   z-index: 1;
   padding-inline: 4px;
-  border-radius: 3px;
   text-shadow: 0 1px 3px #172c39, 0 0 3px #172c39;
   font-variant-numeric: tabular-nums;
 }
