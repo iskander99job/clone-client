@@ -92,13 +92,20 @@ body { margin: 0 }
 .water {
   top: var(--water-top, calc(50% + var(--map-height) * .325));
   bottom: 0;
-  container-type: size;
   overflow: hidden;
   border-top: 2px solid #c0fff5d9;
   background: linear-gradient(#12b8c787, #006d9d calc(var(--map-height) * .175));
 }
 
-.water span {
+.water-bubbles {
+  position: absolute;
+  left: var(--map-left, 0px);
+  top: 0;
+  transform: scale(var(--map-scale, 1));
+  transform-origin: top left;
+}
+
+.water-bubbles span {
   position: absolute;
   top: 0;
   left: var(--bubble-x);
@@ -118,5 +125,5 @@ body { margin: 0 }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .water span { display: none }
+  .water-bubbles span { display: none }
 }

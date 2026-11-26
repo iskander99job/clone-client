@@ -32,6 +32,9 @@ export function bindMapView(
     const verticalTravel = Math.min(camera.height * 0.08, 64) / scale
     center.y = boundCenter(center.y, mapHeight, camera.height / scale, verticalTravel)
     camera.setZoom(scale).centerOn(center.x, center.y)
+    const mapLeft = camera.width / 2 - center.x * scale
+    arena.style.setProperty('--map-left', `${mapLeft}px`)
+    arena.style.setProperty('--map-scale', String(scale))
     const waterTop = camera.height / 2 + (waterY - center.y) * scale
     arena.style.setProperty('--water-top', `${waterTop}px`)
   }
