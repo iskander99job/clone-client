@@ -1,9 +1,10 @@
 import Phaser from 'phaser'
 import RAPIER from '@dimforge/rapier2d-compat'
-import { aim, CELL, Duel, HEIGHT, RADIUS, WIDTH, type Fighter } from './duel'
+import { aim, CELL, Duel, HEIGHT, MAX_WIND, RADIUS, WIDTH, type Fighter } from './duel'
 import './style.css'
 
 const status = document.querySelector<HTMLParagraphElement>('#status')!
+const wind = document.querySelector<HTMLParagraphElement>('#wind')!
 const fire = document.querySelector<HTMLButtonElement>('#fire')!
 const restart = document.querySelector<HTMLButtonElement>('#restart')!
 const angle = document.querySelector<HTMLInputElement>('#angle')!
@@ -105,6 +106,11 @@ class Arena extends Phaser.Scene {
       over: winner === 0 ? 'Ты победил!' : winner === 1 ? 'Искра победила' : 'Ничья',
     }[phase]
     if (status.textContent !== message) status.textContent = message
+    const windPercent = Math.round(Math.abs(this.duel.wind) / MAX_WIND * 100)
+    const windLabel = this.duel.wind === 0
+      ? 'Ветер: штиль'
+      : `Ветер: ${this.duel.wind > 0 ? 'вправо →' : '← влево'} · ${windPercent}%`
+    if (wind.textContent !== windLabel) wind.textContent = windLabel
     fighters.forEach((fighter, i) => {
       if (hp[i].bar.value !== fighter.hp) {
         hp[i].label.textContent = String(fighter.hp)

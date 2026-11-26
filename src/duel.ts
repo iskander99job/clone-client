@@ -8,6 +8,11 @@ export const RADIUS = 31
 const GRAVITY = 370
 const BLAST = 67
 const STEP = 1 / 60
+export const MAX_WIND = 90
+
+function rollWind() {
+  return (Math.floor(Math.random() * 7) - 3) * (MAX_WIND / 3)
+}
 const columns = WIDTH / CELL
 const rows = HEIGHT / CELL
 const getContours = contours().size([columns, rows]).thresholds([0.5]).smooth(false)
@@ -42,6 +47,7 @@ export class Duel {
   elapsed = 0
   revision = 0
   botTurns = 0
+  wind = rollWind()
   winner: number | null = null
 
   constructor() {
@@ -106,6 +112,7 @@ export class Duel {
         .setLinvel(direction.x * speed, direction.y * speed).setCcdEnabled(true),
     )
     this.world.createCollider(RAPIER.ColliderDesc.ball(5).setSensor(true), this.rocket)
+    this.rocket.addForce({ x: this.rocket.mass() * this.wind, y: 0 }, true)
   }
 
   tick() {
@@ -193,6 +200,7 @@ export class Duel {
     player.direction = bot.body.translation().x >= player.body.translation().x ? 1 : -1
     bot.direction = -player.direction
     this.turn = 1 - this.turn
+    this.wind = rollWind()
     this.phase = this.turn === 0 ? 'aim' : 'bot'
     this.elapsed = 0
   }
@@ -209,7 +217,7 @@ export class Duel {
         const speed = 120 + power * 5.6
         for (let t = 0; t < 4; t += 1 / 90) {
           const point = {
-            x: start.x + direction.x * speed * t,
+            x: start.x + direction.x * speed * t + this.wind * t * t / 2,
             y: start.y + direction.y * speed * t + GRAVITY * t * t / 2,
           }
           if (point.x < 0 || point.x > WIDTH || point.y > HEIGHT) break
