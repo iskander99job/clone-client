@@ -33,7 +33,8 @@
 .fighter {
   --fighter-accent: #72d15a;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  gap: clamp(5px, .7vw, 9px);
   width: min(44%, 268px);
   min-width: 0;
 }
