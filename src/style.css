@@ -7,6 +7,9 @@ body { margin: 0 }
   height: 100dvh;
   container-type: size;
   overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
   background: linear-gradient(#1da9e8, #7ad8ed 56%, #a6d8c0 85%);
 }
 
@@ -80,11 +83,15 @@ body { margin: 0 }
   .clouds span { left: var(--x); animation: none }
 }
 
+.arena[data-panning] { cursor: grabbing }
 #field { inset-block: 0 }
-canvas { display: block }
+#field canvas {
+  display: block;
+  transform: translate(var(--map-pan-x, 0px), var(--map-pan-y, 0px)) scale(var(--map-zoom, 1));
+}
 
 .water {
-  top: calc((100cqh - var(--map-height)) / 2 + var(--map-height) * var(--water-ratio, .825));
+  top: calc(50% + var(--map-pan-y, 0px) + var(--map-height) * var(--map-zoom, 1) * (var(--water-ratio, .825) - .5));
   bottom: 0;
   border-top: 2px solid #c0fff5d9;
   background: linear-gradient(#12b8c787, #006d9d calc(var(--map-height) * .175));

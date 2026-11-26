@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import terrainUrl from './assets/fruit-island.png'
 import { FRUIT_ISLAND } from './fruit-island.ts'
+import { bindMapView } from './map-view'
 import './style.css'
 
 // Keep the Phaser canvas at the island artwork's native resolution.
@@ -8,6 +9,7 @@ const width = 2172
 const height = Math.round(width * FRUIT_ISLAND.height / FRUIT_ISLAND.width)
 const arena = document.querySelector<HTMLElement>('.arena')!
 arena.style.setProperty('--water-ratio', String(FRUIT_ISLAND.waterY / FRUIT_ISLAND.height))
+bindMapView(arena, width / height)
 
 const clouds = Array.from(arena.querySelectorAll<HTMLElement>('.clouds span'))
 const lanes = clouds.map((_, index) => index)
