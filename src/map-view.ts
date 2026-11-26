@@ -37,6 +37,8 @@ export function bindMapView(
     const mapLeft = camera.width / 2 - center.x * scale
     const mapTop = camera.height / 2 - center.y * scale
     updateTerrainView?.(-mapLeft / scale, -mapTop / scale, camera.width / scale, camera.height / scale)
+    arena.style.setProperty('--map-left', `${mapLeft}px`)
+    arena.style.setProperty('--map-scale', String(scale))
     const waterTop = camera.height / 2 + (waterY - center.y) * scale
     arena.style.setProperty('--water-top', `${waterTop}px`)
   }
