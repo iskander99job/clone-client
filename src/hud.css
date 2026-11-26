@@ -157,6 +157,7 @@
 .inventory {
   grid-area: inventory;
   position: relative;
+  bottom: min(22dvh, 190px);
   pointer-events: auto;
   cursor: pointer;
 }
@@ -172,6 +173,8 @@
   right: 0;
   bottom: calc(100% + 8px);
   min-width: max-content;
+  max-height: 35dvh;
+  overflow-y: auto;
   margin: 0;
   padding: 10px 14px;
   list-style: none;
