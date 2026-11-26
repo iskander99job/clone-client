@@ -181,6 +181,7 @@ export class Duel {
 
   fire(angle: number, power: number) {
     if (this.phase !== 'aim' && this.phase !== 'bot') return
+    if (this.turn === 0 && !this.online) this.movePlayer(0)
     const fighter = this.fighters[this.turn]
     const origin = this.muzzle(fighter, angle)
     const direction = aim(angle, fighter.direction)
@@ -200,8 +201,28 @@ export class Duel {
     this.rocket.addForce({ x: this.rocket.mass() * this.wind, y: 0 }, true)
   }
 
-  tick() {
+  private movingPlayer = false
+
+  private movePlayer(direction: number) {
+    if (!direction && !this.movingPlayer) return
+    this.movingPlayer = direction !== 0
+    const player = this.fighters[0]
+    const position = player.body.translation()
+    const ground = this.world.castRay(
+      new RAPIER.Ray(position, { x: 0, y: 1 }), RADIUS + 10, true,
+      RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC,
+    )
+    if (!ground) return
+    if (direction) player.direction = direction
+    player.body.setLinvel({ x: direction * 155, y: player.body.linvel().y }, true)
+  }
+
+  tick(move = 0, elevation = 0) {
     if (this.phase === 'over') return
+    if (this.phase === 'aim' && !this.online) {
+      this.movePlayer(move)
+      this.angle = Math.max(12, Math.min(84, this.angle + elevation))
+    }
     this.elapsed += STEP
     this.blastAge += STEP
     const previous = this.rocket?.translation()
@@ -209,6 +230,10 @@ export class Duel {
     for (const fighter of this.fighters) {
       const point = fighter.body.translation()
       if (point.y >= (this.waterY ?? this.height + 65) || point.x < -90 || point.x > this.width + 90) fighter.hp = 0
+    }
+    if (this.phase === 'aim' && this.fighters.some(fighter => fighter.hp === 0)) {
+      this.advance()
+      return
     }
     if (previous && this.rocket) {
       const current = this.rocket.translation()

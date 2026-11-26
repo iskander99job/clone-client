@@ -5,18 +5,51 @@
   background: #101a24;
 }
 * { box-sizing: border-box }
-body { margin: 0; min-width: 280px }
-.game { width: 100%; margin: auto; padding-block: 12px }
-header, .score, .controls { max-width: 840px; margin-inline: auto; padding-inline: 12px }
-header, .score { display: flex; align-items: center; justify-content: space-between; gap: 12px }
-header { margin-bottom: 10px }
-h1 { margin: 0; line-height: 1.02; font-weight: 950; font-size: clamp(30px, 7vw, 44px); letter-spacing: -.055em }
-.kicker { color: #98adbe; font-size: 12px; font-weight: 800; letter-spacing: .12em }
-button { font: inherit; font-weight: 800; border: 0; border-radius: 10px; min-height: 44px; cursor: pointer }
+body { margin: 0 }
+.arena {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  min-height: 280px;
+  overflow: hidden;
+  background: linear-gradient(#2eb9ec 0 20%, #87d8df 49%, #087aa4 78%, #006d9d);
+}
+#field { position: absolute; inset: 0 }
+canvas { display: block }
+.hud {
+  --pad: clamp(8px, 2vw, 24px);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: max(var(--pad), env(safe-area-inset-top)) max(var(--pad), env(safe-area-inset-right))
+    max(var(--pad), env(safe-area-inset-bottom)) max(var(--pad), env(safe-area-inset-left));
+  pointer-events: none;
+}
+.hud button, .hud input { pointer-events: auto }
+button {
+  font: inherit;
+  font-weight: 800;
+  border: 1px solid #ffffff40;
+  border-radius: 12px;
+  min-height: 44px;
+  cursor: pointer;
+}
 button:focus-visible, input:focus-visible { outline: 3px solid white; outline-offset: 3px }
-#restart { background: #263746; color: inherit; padding-inline: 14px }
-.score { margin-bottom: 8px }
-.fighter { flex: 1; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 3px 5px; font-size: 14px; font-weight: 750 }
+button:disabled { cursor: default; opacity: .5 }
+#restart { background: #152b3bdf; color: inherit; padding-inline: 12px }
+.score { display: flex; align-items: start; justify-content: space-between; gap: 8px }
+.fighter {
+  width: min(32vw, 200px);
+  background: #152b3bdf;
+  border-radius: 12px;
+  padding: 7px 9px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 5px;
+  font-size: 14px;
+  font-weight: 750;
+}
 .player { --team: #8bf0b9 }
 .bot { --team: #ff9b6d }
 .fighter strong { color: var(--team) }
@@ -24,14 +57,28 @@ progress { appearance: none; grid-column: span 2; width: 100%; height: 6px; bord
 progress::-webkit-progress-bar { background: #263746 }
 progress::-webkit-progress-value { background: var(--team) }
 progress::-moz-progress-bar { background: var(--team) }
-.arena { position: relative; background: #223e50; overflow: hidden }
-#field { aspect-ratio: 3 / 1 }
-canvas { display: block; width: 100%; height: auto }
-#status { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); margin: 0; padding: 7px 12px; border-radius: 20px; background: #101a24; font-size: 14px; font-weight: 800; white-space: nowrap; pointer-events: none }
-.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; margin-top: 8px }
-.wind { grid-column: span 2; margin: 0 0 4px; color: #b9ccda; font-size: 14px; font-weight: 750 }
-label { display: grid; grid-template-columns: 1fr auto; align-items: center; font-size: 14px; font-weight: 750; min-width: 0 }
-output { color: #8bf0b9; font-variant-numeric: tabular-nums }
-input { grid-column: span 2; width: 100%; margin: 0; min-height: 34px; accent-color: #8bf0b9 }
-#fire { grid-column: span 2; color: #101a24; background: #ffd370 }
-#fire:disabled { cursor: default; color: #a2b2bd; background: #263746 }
+.turn { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 6px }
+.turn p { margin: 0; padding: 5px 9px; border-radius: 10px; background: #152b3bdf; font-size: 14px; font-weight: 750 }
+.controls { margin-top: auto; display: flex; justify-content: space-between; align-items: end; gap: 6px }
+.directions {
+  --key-size: clamp(44px, 10vw, 62px);
+  display: grid;
+  grid-template-columns: repeat(3, var(--key-size));
+  grid-template-rows: repeat(2, var(--key-size));
+  gap: 4px;
+}
+.directions button { color: #fff; font-size: 25px; touch-action: none; user-select: none; -webkit-touch-callout: none }
+.directions button[data-held] { filter: brightness(1.45) }
+.move { background: #a93443e6 }
+.aim { background: #1b704fe6 }
+.up { grid-area: 1 / 2 }
+.down { grid-area: 2 / 2 }
+.left { grid-area: 2 / 1 }
+.right { grid-area: 2 / 3 }
+.shot { width: clamp(110px, 23vw, 218px); display: grid; gap: 5px }
+.shot label, #angle-value { padding: 4px 8px; border-radius: 8px; background: #152b3bdf; font-size: 14px; font-weight: 750 }
+#angle-value { justify-self: end }
+label { display: grid; grid-template-columns: 1fr auto; align-items: center }
+output { color: #b4f3d0; font-variant-numeric: tabular-nums }
+input { grid-column: span 2; width: 100%; margin: 0; min-height: 25px; accent-color: #8bf0b9 }
+#fire { color: #101a24; background: #ffd370; font-size: clamp(13px, 3vw, 16px) }

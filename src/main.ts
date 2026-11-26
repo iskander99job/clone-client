@@ -11,7 +11,11 @@ const status = document.querySelector<HTMLParagraphElement>('#status')!
 const wind = document.querySelector<HTMLParagraphElement>('#wind')!
 const fire = document.querySelector<HTMLButtonElement>('#fire')!
 const restart = document.querySelector<HTMLButtonElement>('#restart')!
-const angle = document.querySelector<HTMLInputElement>('#angle')!
+type Direction = 'left' | 'right' | 'up' | 'down'
+const directions = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-control]'))
+const keys: Record<string, Direction> = {
+  ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down',
+}
 const power = document.querySelector<HTMLInputElement>('#power')!
 const angleValue = document.querySelector<HTMLOutputElement>('#angle-value')!
 const powerValue = document.querySelector<HTMLOutputElement>('#power-value')!
@@ -26,6 +30,8 @@ class Arena extends Phaser.Scene {
   action!: Phaser.GameObjects.Graphics
   accumulator = 0
   drawnRevision = 0
+  held = new Map<number | string, Direction>()
+  tapped = new Set<Direction>()
 
   terrainImage!: CanvasImageSource
   initialMask!: number[]
@@ -71,8 +77,45 @@ class Arena extends Phaser.Scene {
         this.updateControls()
       }
     })
-    angle.addEventListener('input', () => this.readAim())
-    power.addEventListener('input', () => this.readAim())
+    power.addEventListener('input', () => {
+      this.duel.power = power.valueAsNumber
+      this.updateControls()
+    })
+    this.bindDirections()
+  }
+
+  bindDirections() {
+    for (const button of directions) {
+      const direction = button.dataset.control as Direction
+      button.addEventListener('pointerdown', event => {
+        if (button.disabled || event.button !== 0) return
+        button.setPointerCapture(event.pointerId)
+        this.held.set(event.pointerId, direction)
+        this.tapped.add(direction)
+      })
+      for (const eventName of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {
+        button.addEventListener(eventName, event => this.held.delete(event.pointerId))
+      }
+      button.addEventListener('click', event => {
+        if (event.detail === 0 && !button.disabled) this.tapped.add(direction)
+      })
+    }
+    window.addEventListener('keydown', event => {
+      const direction = keys[event.key]
+      if (!direction || this.duel.phase !== 'aim' || event.target === power) return
+      event.preventDefault()
+      if (!event.repeat) {
+        this.held.set(event.key, direction)
+        this.tapped.add(direction)
+      }
+    })
+    window.addEventListener('keyup', event => this.held.delete(event.key))
+    window.addEventListener('blur', () => this.clearDirections())
+  }
+
+  clearDirections() {
+    this.held.clear()
+    this.tapped.clear()
   }
 
   newMatch() {
@@ -80,25 +123,22 @@ class Arena extends Phaser.Scene {
     this.duel = new Duel(false, this.initialMask, FRUIT_ISLAND)
     this.accumulator = 0
     this.drawnRevision = 0
-    angle.value = String(this.duel.angle)
     power.value = String(this.duel.power)
-    this.readAim()
+    this.clearDirections()
     this.updateControls()
     this.draw()
-  }
-
-  readAim() {
-    this.duel.angle = angle.valueAsNumber
-    this.duel.power = power.valueAsNumber
-    angleValue.value = this.duel.angle + '°'
-    powerValue.value = this.duel.power + '%'
   }
 
   update(_time: number, delta: number) {
     if (!this.duel) return
     this.accumulator += Math.min(delta, 100)
     while (this.accumulator >= 1000 / 60) {
-      this.duel.tick()
+      const active = new Set([...this.held.values(), ...this.tapped])
+      this.duel.tick(
+        Number(active.has('right')) - Number(active.has('left')),
+        Number(active.has('up')) - Number(active.has('down')),
+      )
+      this.tapped.clear()
       this.accumulator -= 1000 / 60
     }
     this.updateControls()
@@ -107,7 +147,17 @@ class Arena extends Phaser.Scene {
 
   updateControls() {
     const { phase, winner, turn, fighters } = this.duel
-    fire.disabled = angle.disabled = power.disabled = phase !== 'aim'
+    const enabled = phase === 'aim'
+    if (!enabled) this.clearDirections()
+    fire.disabled = power.disabled = !enabled
+    for (const button of directions) {
+      button.disabled = !enabled
+      button.toggleAttribute('data-held', [...this.held.values()].includes(button.dataset.control as Direction))
+    }
+    const currentAngle = this.duel.angle + '°'
+    const currentPower = this.duel.power + '%'
+    if (angleValue.value !== currentAngle) angleValue.value = currentAngle
+    if (powerValue.value !== currentPower) powerValue.value = currentPower
     const message = {
       aim: 'Твой ход',
       bot: 'Искра целится…',
