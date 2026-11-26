@@ -10,6 +10,7 @@ export function bindMapView(
   mapWidth: number,
   mapHeight: number,
   waterY: number,
+  updateTerrainView?: (left: number, top: number, width: number, height: number) => void,
 ) {
   const camera = scene.cameras.main
   let zoom = 1
@@ -33,6 +34,8 @@ export function bindMapView(
     center.y = boundCenter(center.y, mapHeight, camera.height / scale, verticalTravel)
     camera.setZoom(scale).centerOn(center.x, center.y)
     const mapLeft = camera.width / 2 - center.x * scale
+    const mapTop = camera.height / 2 - center.y * scale
+    updateTerrainView?.(-mapLeft / scale, -mapTop / scale, camera.width / scale, camera.height / scale)
     arena.style.setProperty('--map-left', `${mapLeft}px`)
     arena.style.setProperty('--map-scale', String(scale))
     const waterTop = camera.height / 2 + (waterY - center.y) * scale

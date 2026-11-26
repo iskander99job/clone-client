@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { FLAT_TEST, FRUIT_ARENA, FRUIT_FOREGROUND, STONE_QUARRY } from './maps'
 import { addIslandFighter, loadIslandFighter } from './island-fighter'
 import { bindMapView } from './map-view'
+import { createRasterTerrain, createVectorTerrain } from './terrain-view'
 import './style.css'
 import './hud.css'
 
@@ -57,20 +58,23 @@ for (let index = 0; index < bubbleCount; index++) {
 
 class Arena extends Phaser.Scene {
   preload() {
-    const renderer = this.game.renderer
-    const largeArt = map.largeArt
-    const supportsLargeTexture = largeArt && (!(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)
-      || renderer.getMaxTextureSize() >= largeArt.width)
-    this.load.image('terrain-art', supportsLargeTexture ? largeArt.url : map.art)
-    this.load.image('terrain-mask', map.mask)
+    if (map.art !== undefined) {
+      const renderer = this.game.renderer
+      const largeArt = map.largeArt
+      const supportsLargeTexture = largeArt && (!(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)
+        || renderer.getMaxTextureSize() >= largeArt.width)
+      this.load.image('terrain-art', supportsLargeTexture ? largeArt.url : map.art)
+    }
     loadIslandFighter(this)
   }
 
   create() {
-    if (!this.textures.exists('terrain-art')) return
-    const terrain = this.add.image(0, 0, 'terrain-art').setOrigin(0).setDisplaySize(width, height)
-    bindMapView(arena, this, width, height, waterY)
-    void addIslandFighter(this, arena, map, terrain).catch(error => {
+    const field = document.querySelector<HTMLElement>('#field')!
+    const vector = map.vectorArt === undefined ? undefined : createVectorTerrain(this, field, map.vectorArt, width, height)
+    if (!vector && !this.textures.exists('terrain-art')) return
+    const terrain = vector ?? createRasterTerrain(this, width, height)
+    bindMapView(arena, this, width, height, waterY, vector?.updateView)
+    void addIslandFighter(this, arena, map, terrain.cutCrater).catch(error => {
       console.error('Не удалось запустить управление персонажем', error)
     })
   }

@@ -10,13 +10,17 @@ export function loadIslandFighter(scene: Phaser.Scene) {
   scene.load.image('boar', boarUrl)
 }
 
-export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement, map: ArenaMap, terrain: Phaser.GameObjects.Image) {
+export async function addIslandFighter(
+  scene: Phaser.Scene,
+  arena: HTMLElement,
+  map: ArenaMap,
+  cutCrater: (point: Point, radius: number) => void,
+) {
   const { width, height, waterY } = map
-  if (!scene.textures.exists('terrain-mask')) throw new Error('Маска карты не загружена')
-  const source: unknown = scene.textures.get('terrain-mask').getSourceImage()
-  if (!(source instanceof HTMLImageElement || source instanceof HTMLCanvasElement || source instanceof ImageBitmap)) {
-    throw new Error('Неподдерживаемый формат изображения карты')
-  }
+  const source = new Image()
+  source.src = map.mask
+  await source.decode()
+  if (!scene.sys.isActive()) return
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
@@ -69,7 +73,6 @@ export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement, 
     .fillStyle(0xdca554).fillRect(38, -5, 5, 10)
     .fillStyle(0x292224).fillCircle(14, 4, 5)
   const effects = scene.add.graphics().setName('shot-effects')
-  let damagedTerrain: Phaser.Textures.CanvasTexture | null = null
   let lastBlast: Point | undefined
 
   function syncWeapon() {
@@ -189,25 +192,7 @@ export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement, 
     }
     if (duel.blast && lastBlast !== duel.blast) {
       lastBlast = duel.blast
-      if (!damagedTerrain) {
-        const art = terrain.texture.getSourceImage() as HTMLImageElement
-        damagedTerrain = scene.textures.createCanvas('damaged-terrain', art.width, art.height)
-        if (damagedTerrain) {
-          damagedTerrain.context.drawImage(art, 0, 0)
-          terrain.setTexture(damagedTerrain.key).setDisplaySize(width, height)
-        }
-      }
-      if (damagedTerrain) {
-        const context = damagedTerrain.context
-        context.save()
-        context.scale(damagedTerrain.width / width, damagedTerrain.height / height)
-        context.globalCompositeOperation = 'destination-out'
-        context.beginPath()
-        context.arc(lastBlast.x, lastBlast.y, BLAST, 0, Math.PI * 2)
-        context.fill()
-        context.restore()
-        damagedTerrain.refresh()
-      }
+      cutCrater(lastBlast, BLAST)
     }
     const position = body.translation()
     if (position.y >= waterY || position.x < 0 || position.x > width) {
@@ -277,7 +262,6 @@ export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement, 
     if (menu.open) menu.close()
     inventory.setAttribute('aria-expanded', 'false')
     scene.events.off('update', update)
-    if (damagedTerrain) scene.textures.remove(damagedTerrain.key)
     duel.world.free()
   })
 }

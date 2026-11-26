@@ -1,5 +1,6 @@
 import flatUrl from './assets/flat-test.png'
 import fruitForegroundUrl from './assets/fruit-island.svg'
+import fruitForegroundSvg from './assets/fruit-island.svg?raw'
 import fruitUrl from './assets/fruit-island.png'
 import fruit2xUrl from './assets/fruit-island-2x.webp'
 import quarryUrl from './assets/stone-quarry.webp'
@@ -8,11 +9,12 @@ import { FRUIT_ISLAND, type TerrainMap } from './fruit-island'
 
 export type ArenaMap = TerrainMap & {
   title: string
-  art: string
-  largeArt?: { url: string; width: number }
   mask: string
   fighterSize: number
-}
+} & (
+  | { vectorArt: string; art?: never; largeArt?: never }
+  | { vectorArt?: never; art: string; largeArt?: { url: string; width: number } }
+)
 
 export const FLAT_TEST: ArenaMap = {
   title: 'Тестовая площадка',
@@ -28,11 +30,16 @@ export const FLAT_TEST: ArenaMap = {
 }
 
 export const FRUIT_FOREGROUND: ArenaMap = {
-  ...FLAT_TEST,
   title: 'Фруктовая карта',
-  art: fruitForegroundUrl,
-  mask: fruitForegroundUrl,
+  width: FLAT_TEST.width,
+  height: FLAT_TEST.height,
+  waterY: FLAT_TEST.waterY,
   spawn: [875, 1735],
+  shotSpeed: FLAT_TEST.shotSpeed,
+  contourTolerance: FLAT_TEST.contourTolerance,
+  vectorArt: fruitForegroundSvg,
+  mask: fruitForegroundUrl,
+  fighterSize: FLAT_TEST.fighterSize,
 }
 
 export const STONE_QUARRY: ArenaMap = {
