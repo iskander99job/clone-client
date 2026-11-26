@@ -1,6 +1,8 @@
 .hud {
   --hud-ink: #fff6d9;
   --hud-shell: #172c39;
+  --control-size: clamp(44px, 7vw, 72px);
+  --control-gap: clamp(8px, 1vw, 14px);
   --hud-glass: #172c396b;
   --hud-line: #fff6d955;
   position: absolute;
@@ -105,7 +107,7 @@
 .hud-button {
   display: grid;
   place-items: center;
-  width: clamp(38px, 7vw, 72px);
+  width: var(--control-size);
   aspect-ratio: 1;
   box-sizing: border-box;
   padding: 0;
@@ -134,13 +136,12 @@
 .direction-pad,
 .hud-actions {
   display: grid;
-  gap: clamp(4px, .8vw, 9px);
+  gap: var(--control-gap);
 }
 
 .direction-pad {
   grid-template-areas: ". up ." "left down right";
   margin-inline-start: clamp(8px, 2vw, 36px);
-  margin-bottom: clamp(6px, 3.5vh, 26px);
 }
 .up { grid-area: up; }
 .left { grid-area: left; }
@@ -148,16 +149,18 @@
 .right { grid-area: right; }
 
 .hud-actions {
-  grid-template-areas: "shoot inventory" "forward back";
+  grid-template-areas: ". inventory" ". shoot" "forward back";
 }
-.shoot { grid-area: shoot; }
+.shoot {
+  grid-area: shoot;
+  background: #163d53b8;
+}
 .jump-forward { grid-area: forward; }
 .jump-back { grid-area: back; }
 
 .inventory {
   grid-area: inventory;
   position: relative;
-  bottom: min(22dvh, 190px);
   pointer-events: auto;
   cursor: pointer;
 }
@@ -172,7 +175,8 @@
   position: absolute;
   right: 0;
   bottom: calc(100% + 8px);
-  min-width: max-content;
+  box-sizing: border-box;
+  width: min(224px, calc(100vw - 24px));
   max-height: 35dvh;
   overflow-y: auto;
   margin: 0;
@@ -185,6 +189,16 @@
   font-size: .85rem;
 }
 .inventory li + li { margin-top: 6px; }
+
+@media (max-height: 460px) {
+  .hud {
+    --control-size: clamp(44px, 12dvh, 56px);
+  }
+
+  .hud-actions {
+    grid-template-areas: "shoot inventory" "forward back";
+  }
+}
 
 .jump-icon,
 .target-icon {
