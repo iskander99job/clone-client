@@ -1,15 +1,18 @@
 import Phaser from 'phaser'
-import terrainUrl from './assets/fruit-island.png'
-import terrain2xUrl from './assets/fruit-island-2x.webp'
-import { FRUIT_ISLAND } from './fruit-island.ts'
+import { FRUIT_ARENA, STONE_QUARRY } from './maps'
 import { addIslandFighter, loadIslandFighter } from './island-fighter'
 import { bindMapView } from './map-view'
 import './style.css'
 import './hud.css'
 
 // Keep the island's world dimensions independent of the texture resolution.
-const { width, height, waterY } = FRUIT_ISLAND
+const isFruit = new URLSearchParams(location.search).get('map') === 'fruit'
+const map = isFruit ? FRUIT_ARENA : STONE_QUARRY
+const { width, height, waterY } = map
 const arena = document.querySelector<HTMLElement>('.arena')!
+arena.setAttribute('aria-label', map.title)
+arena.dataset.map = isFruit ? 'fruit' : 'quarry'
+document.title = `Кратер — ${map.title}`
 
 const clouds = Array.from(arena.querySelectorAll<HTMLElement>('.clouds span'))
 const lanes = clouds.map((_, index) => index)
@@ -48,10 +51,11 @@ for (let index = 0; index < bubbleCount; index++) {
 class Arena extends Phaser.Scene {
   preload() {
     const renderer = this.game.renderer
-    const supportsLargeTexture = !(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)
-      || renderer.getMaxTextureSize() >= 4344
-    this.load.image('terrain-art', supportsLargeTexture ? terrain2xUrl : terrainUrl)
-    this.load.image('terrain-mask', terrainUrl)
+    const largeArt = map.largeArt
+    const supportsLargeTexture = largeArt && (!(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)
+      || renderer.getMaxTextureSize() >= largeArt.width)
+    this.load.image('terrain-art', supportsLargeTexture ? largeArt.url : map.art)
+    this.load.image('terrain-mask', map.mask)
     loadIslandFighter(this)
   }
 
@@ -59,7 +63,7 @@ class Arena extends Phaser.Scene {
     if (!this.textures.exists('terrain-art')) return
     this.add.image(0, 0, 'terrain-art').setOrigin(0).setDisplaySize(width, height)
     bindMapView(arena, this, width, height, waterY)
-    void addIslandFighter(this, arena).catch(error => {
+    void addIslandFighter(this, arena, map).catch(error => {
       console.error('Не удалось запустить управление персонажем', error)
     })
   }

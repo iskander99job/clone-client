@@ -1,5 +1,5 @@
 import type Phaser from 'phaser'
-import { FRUIT_ISLAND } from './fruit-island'
+import type { ArenaMap } from './maps'
 import walkUrl from './assets/boar-walk.png'
 import jumpUrl from './assets/boar-jump.png'
 
@@ -12,8 +12,8 @@ export function loadIslandFighter(scene: Phaser.Scene) {
   scene.load.spritesheet('boar-jump', jumpUrl, frame)
 }
 
-export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement) {
-  const { width, height, waterY } = FRUIT_ISLAND
+export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement, map: ArenaMap) {
+  const { width, height, waterY } = map
   if (!scene.textures.exists('terrain-mask')) throw new Error('PNG карты не загружен')
   const source: unknown = scene.textures.get('terrain-mask').getSourceImage()
   if (!(source instanceof HTMLImageElement || source instanceof HTMLCanvasElement || source instanceof ImageBitmap)) {
@@ -29,12 +29,12 @@ export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement) 
   await initPhysics()
   if (!scene.sys.isActive()) return
 
-  const duel = new Duel(false, terrainMaskFromPixels(pixels, width, height), FRUIT_ISLAND)
+  const duel = new Duel(false, terrainMaskFromPixels(pixels, width, height), map)
   const { body } = duel.fighters[0]
   duel.fighters[1].body.setEnabled(false)
   const spawn = body.translation()
   const sprite = scene.add.sprite(spawn.x, spawn.y + RADIUS, 'boar-jump', 0)
-    .setOrigin(0.5, FEET / FRAME).setDisplaySize(128, 128)
+    .setOrigin(0.5, FEET / FRAME).setDisplaySize(map.fighterSize, map.fighterSize)
   const input = new AbortController()
   const { signal } = input
   const pressed = new Map<number, number>()

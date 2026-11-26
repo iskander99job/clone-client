@@ -127,3 +127,11 @@ body { margin: 0 }
 @media (prefers-reduced-motion: reduce) {
   .water-bubbles span { display: none }
 }
+
+.arena[data-map="quarry"] {
+  background: linear-gradient(#57658d, #a990ad 52%, #e6aa88 83%);
+}
+
+.arena[data-map="quarry"] .orchard {
+  display: none;
+}

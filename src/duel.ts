@@ -1,6 +1,7 @@
 import RAPIER from '@dimforge/rapier2d-compat'
 import { contours } from 'd3-contour'
-import type { FRUIT_ISLAND } from './fruit-island.ts'
+import { simplifyRing } from './terrain-contour'
+import type { TerrainMap } from './fruit-island.ts'
 
 export { FRUIT_ISLAND } from './fruit-island.ts'
 
@@ -56,6 +57,7 @@ export class Duel {
   private readonly rows: number
   private readonly waterY?: number
   private readonly shotSpeed: number
+  private readonly contourTolerance: number
   rings: number[][][] = []
   fighters: [Fighter, Fighter]
   terrain: RAPIER.Collider[] = []
@@ -78,13 +80,14 @@ export class Duel {
 
   readonly online: boolean
 
-  constructor(online = false, terrainMask?: number[], map?: typeof FRUIT_ISLAND) {
+  constructor(online = false, terrainMask?: number[], map?: TerrainMap) {
     this.width = map?.width ?? WIDTH
     this.height = map?.height ?? HEIGHT
     this.columns = this.width / CELL
     this.rows = this.height / CELL
     this.waterY = map?.waterY
     this.shotSpeed = map?.shotSpeed ?? 1
+    this.contourTolerance = map?.contourTolerance ?? 0
     const { columns, rows } = this
     this.mask = new Array<number>(columns * rows).fill(0)
     this.online = online
@@ -160,7 +163,8 @@ export class Duel {
     const getContours = contours().size([this.columns, this.rows]).thresholds([0.5]).smooth(false)
     this.rings = getContours(this.mask).flatMap(({ coordinates }) => coordinates.flat())
     this.terrain = this.rings.map(ring => {
-      const vertices = new Float32Array(ring.flatMap(point => point.map(coordinate => coordinate * CELL)))
+      const boundary = simplifyRing(ring, this.contourTolerance)
+      const vertices = new Float32Array(boundary.flatMap(point => point.map(coordinate => coordinate * CELL)))
       return this.world.createCollider(RAPIER.ColliderDesc.polyline(vertices).setFriction(1.5))
     })
     this.revision++
@@ -203,21 +207,33 @@ export class Duel {
 
   private movingPlayer = false
 
-  playerGrounded(reach = 4) {
+  private playerGroundContact(reach: number) {
     const { body } = this.fighters[0]
     return this.world.castShape(
       body.translation(), 0, { x: 0, y: 1 }, this.playerGroundProbe, 0, reach, true,
       RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC,
-    ) !== null
+    )
+  }
+
+  playerGrounded() {
+    return this.playerGroundContact(4) !== null
   }
 
   movePlayer(direction: number) {
     if (!direction && !this.movingPlayer) return
     const player = this.fighters[0]
     if (direction) player.direction = direction
-    if (!this.playerGrounded(10) || player.body.linvel().y < -20) return
+    const ground = this.playerGroundContact(10)
+    if (!ground) return
     this.movingPlayer = direction !== 0
-    player.body.setLinvel({ x: direction * 155, y: player.body.linvel().y }, true)
+    const speed = direction * 155
+    const normal = ground.normal1
+    if (direction && normal.y < -0.55) {
+      // Walk tangentially so friction cannot pin horizontal input against the slope.
+      player.body.setLinvel({ x: -normal.y * speed, y: normal.x * speed }, true)
+    } else {
+      player.body.setLinvel({ x: speed, y: player.body.linvel().y }, true)
+    }
   }
 
   jumpPlayer(relativeDirection: number) {
