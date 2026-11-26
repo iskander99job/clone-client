@@ -203,3 +203,20 @@
   font-size: .85rem;
 }
 .inventory li + li { margin-top: 6px; }
+
+.jump-icon {
+  width: 62%;
+  aspect-ratio: 1;
+  background: currentColor;
+  mask: url('./assets/jump.png') center / contain no-repeat;
+}
+
+.jump-icon-back { transform: scaleX(-1); }
+
+.icon-credit {
+  padding-top: 6px;
+  border-top: 1px solid var(--hud-line);
+  font-size: .7rem;
+}
+
+.icon-credit a { color: inherit; }
