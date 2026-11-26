@@ -158,6 +158,12 @@
   pointer-events: auto;
   cursor: pointer;
 }
+.inventory-crate {
+  width: 74%;
+  height: 74%;
+  object-fit: contain;
+}
+
 .inventory summary::-webkit-details-marker { display: none; }
 .inventory ul {
   position: absolute;
