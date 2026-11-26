@@ -17,6 +17,56 @@
     <div class="water" aria-hidden="true">
       <div class="water-bubbles"></div>
     </div>
+    <section class="hud" aria-label="Интерфейс дуэли">
+      <div class="hud-top">
+        <div class="fighter fighter-player">
+          <span class="avatar" aria-hidden="true">🍉</span>
+          <div class="fighter-stats">
+            <div class="health">
+              <progress aria-label="Здоровье игрока" max="100" value="100"></progress>
+              <span aria-hidden="true">100 / 100</span>
+            </div>
+            <div class="nickname">Игрок</div>
+          </div>
+        </div>
+        <div class="turn">
+          <span class="turn-track" aria-hidden="true"></span>
+          <span class="turn-clock" aria-label="Время хода — 30 секунд">30</span>
+          <button class="hud-button flag" type="button" aria-label="Сдаться" disabled>⚑</button>
+        </div>
+        <div class="fighter fighter-bot">
+          <span class="avatar" aria-hidden="true">🍇</span>
+          <div class="fighter-stats">
+            <div class="health">
+              <progress aria-label="Здоровье бота" max="100" value="100"></progress>
+              <span aria-hidden="true">100 / 100</span>
+            </div>
+            <div class="nickname">Бот</div>
+          </div>
+        </div>
+      </div>
+      <div class="hud-bottom">
+        <div class="direction-pad" role="group" aria-label="Движение">
+          <button class="hud-button up" type="button" aria-label="Вверх" disabled>↑</button>
+          <button class="hud-button left" type="button" aria-label="Влево" disabled>←</button>
+          <button class="hud-button down" type="button" aria-label="Вниз" disabled>↓</button>
+          <button class="hud-button right" type="button" aria-label="Вправо" disabled>→</button>
+        </div>
+        <div class="hud-actions" role="group" aria-label="Действия">
+          <details class="inventory">
+            <summary class="hud-button" aria-label="Оружие">▦</summary>
+            <ul>
+              <li>Базука</li>
+              <li>Обычная граната</li>
+              <li>Липучая граната</li>
+              <li>Осколочная граната</li>
+            </ul>
+          </details>
+          <button class="hud-button" type="button" aria-label="Прыжок вперёд" disabled>↪</button>
+          <button class="hud-button" type="button" aria-label="Прыжок назад" disabled>↶</button>
+        </div>
+      </div>
+    </section>
   </main>
   <script type="module" src="/src/main.ts"></script>
 </body>

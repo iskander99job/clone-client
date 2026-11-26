@@ -80,6 +80,7 @@ export function bindMapView(
   }, { passive: false })
 
   arena.addEventListener('pointerdown', event => {
+    if (event.target instanceof Element && event.target.closest('.hud')) return
     if (event.button !== 0 || pointers.size >= 2) return
     arena.setPointerCapture(event.pointerId)
     pointers.set(event.pointerId, point(event))

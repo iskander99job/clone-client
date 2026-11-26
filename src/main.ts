@@ -4,6 +4,7 @@ import terrain2xUrl from './assets/fruit-island-2x.webp'
 import { FRUIT_ISLAND } from './fruit-island.ts'
 import { bindMapView } from './map-view'
 import './style.css'
+import './hud.css'
 
 // Keep the island's world dimensions independent of the texture resolution.
 const width = 2172
