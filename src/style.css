@@ -119,6 +119,13 @@ body { margin: 0 }
   pointer-events: none;
 }
 
+.vector-terrain {
+  /* The arena clips the layer, leaving offscreen artwork available while it moves. */
+  overflow: visible;
+  transform-box: border-box;
+  transform-origin: top left;
+}
+
 .water {
   top: var(--water-top, calc(50% + var(--map-height) * .325));
   bottom: 0;

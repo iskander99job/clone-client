@@ -31,10 +31,23 @@ export function createVectorTerrain(
   outline.setAttribute('clip-rule', 'evenodd')
   let remaining: MultiPolygon = [[[[0, 0], [width, 0], [width, height], [0, height], [0, 0]]]]
 
+  let committedView: { left: number; top: number; width: number } | undefined
   field.prepend(viewport)
 
   return {
-    updateView,
+    updateView(left: number, top: number, visibleWidth: number, visibleHeight: number, preview = false) {
+      if (preview && committedView) {
+        const x = (committedView.left - left) / visibleWidth * 100
+        const y = (committedView.top - top) / visibleHeight * 100
+        const scale = committedView.width / visibleWidth
+        viewport.style.transform = `translate3d(${x}%, ${y}%, 0) scale(${scale})`
+        return
+      }
+
+      committedView = { left, top, width: visibleWidth }
+      updateView(left, top, visibleWidth, visibleHeight)
+      viewport.style.removeProperty('transform')
+    },
     cutCrater(point: Point, radius: number) {
       const crater: Ring = Array.from({ length: CRATER_SEGMENTS }, (_, index) => {
         const angle = index * 2 * Math.PI / CRATER_SEGMENTS
