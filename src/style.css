@@ -40,7 +40,7 @@ body { margin: 0 }
   position: absolute;
   left: 0;
   top: var(--y);
-  width: clamp(70px, var(--width), 300px);
+  width: clamp(34px, var(--width), 176px);
   aspect-ratio: 720 / 179;
   opacity: var(--opacity);
   background: url('./assets/cloud.webp') center / contain no-repeat;
@@ -48,26 +48,26 @@ body { margin: 0 }
 }
 
 .clouds span:nth-child(1) {
-  --x: 6%; --y: 10%; --width: 17vw; --opacity: .87; --duration: 160s; --delay: -33s;
+  --x: 6%; --y: 10%; --width: 10vw; --opacity: .76; --duration: 160s; --delay: -33s;
 }
 .clouds span:nth-child(2) {
-  --x: 30%; --y: 28%; --width: 9vw; --opacity: .68; --duration: 215s; --delay: -77s;
+  --x: 30%; --y: 28%; --width: 5.5vw; --opacity: .55; --duration: 215s; --delay: -77s;
 }
 .clouds span:nth-child(3) {
-  --x: 62%; --y: 20%; --width: 12vw; --opacity: .76; --duration: 185s; --delay: -123s;
+  --x: 62%; --y: 20%; --width: 7.5vw; --opacity: .64; --duration: 185s; --delay: -123s;
 }
 .clouds span:nth-child(4) {
-  --x: 78%; --y: 7%; --width: 15vw; --opacity: .81; --duration: 235s; --delay: -190s;
+  --x: 78%; --y: 7%; --width: 9vw; --opacity: .71; --duration: 235s; --delay: -190s;
 }
 
 .clouds .cloud-puff {
-  --x: 44%; --y: 13%; --width: 10vw; --opacity: .78; --duration: 198s; --delay: -98s;
-  aspect-ratio: 443 / 320;
+  --x: 44%; --y: 13%; --width: 6.5vw; --opacity: .65; --duration: 198s; --delay: -98s;
+  aspect-ratio: 420 / 107;
   background-image: url('./assets/cloud-puff.webp');
 }
 .clouds .cloud-wisp {
-  --x: 9%; --y: 34%; --width: 19vw; --opacity: .58; --duration: 258s; --delay: -64s;
-  aspect-ratio: 720 / 227;
+  --x: 9%; --y: 34%; --width: 11vw; --opacity: .54; --duration: 258s; --delay: -64s;
+  aspect-ratio: 420 / 91;
   background-image: url('./assets/cloud-wisp.webp');
 }
 
