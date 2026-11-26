@@ -7,6 +7,7 @@ export const CELL = 2
 export const RADIUS = 31
 const GRAVITY = 370
 const BLAST = 67
+const BULLET_CRATER = 10
 const STEP = 1 / 60
 export const MAX_WIND = 90
 
@@ -141,7 +142,10 @@ export class Duel {
       ray, range, true, undefined, undefined, undefined, shooter.body,
     )
     const end = ray.pointAt(blocked ? 0 : hit?.timeOfImpact ?? range)
-    if (hit?.collider.parent()?.handle === target.body.handle) {
+    const hitBody = hit?.collider.parent()
+    if (blocked || (hit && !hitBody)) {
+      this.carveTerrain(end, BULLET_CRATER)
+    } else if (hitBody?.handle === target.body.handle) {
       target.hp = Math.max(0, target.hp - 8)
     }
     this.tracers.push({ start, end, age: 0, hit: blocked || hit !== null })
@@ -201,17 +205,24 @@ export class Duel {
     }
   }
 
-  explode(point: Point) {
-    this.blast = point
-    this.blastAge = 0
-    for (let y = Math.max(0, Math.floor((point.y - BLAST) / CELL)); y < Math.min(rows, (point.y + BLAST) / CELL); y++) {
-      for (let x = Math.max(0, Math.floor((point.x - BLAST) / CELL)); x < Math.min(columns, (point.x + BLAST) / CELL); x++) {
-        if (distance(point, { x: (x + 0.5) * CELL, y: (y + 0.5) * CELL }) < BLAST) {
-          this.mask[y * columns + x] = 0
+  carveTerrain(point: Point, radius: number) {
+    let changed = false
+    for (let y = Math.max(0, Math.floor((point.y - radius) / CELL)); y < Math.min(rows, (point.y + radius) / CELL); y++) {
+      for (let x = Math.max(0, Math.floor((point.x - radius) / CELL)); x < Math.min(columns, (point.x + radius) / CELL); x++) {
+        const index = y * columns + x
+        if (this.mask[index] && distance(point, { x: (x + 0.5) * CELL, y: (y + 0.5) * CELL }) < radius) {
+          this.mask[index] = 0
+          changed = true
         }
       }
     }
-    this.rebuildTerrain()
+    if (changed) this.rebuildTerrain()
+  }
+
+  explode(point: Point) {
+    this.blast = point
+    this.blastAge = 0
+    this.carveTerrain(point, BLAST)
     for (const fighter of this.fighters) {
       const center = fighter.body.translation()
       const separation = distance(point, center)
