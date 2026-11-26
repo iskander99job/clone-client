@@ -60,6 +60,17 @@ body { margin: 0 }
   --x: 78%; --y: 7%; --width: 15vw; --opacity: .81; --duration: 235s; --delay: -190s;
 }
 
+.clouds .cloud-puff {
+  --x: 44%; --y: 13%; --width: 10vw; --opacity: .78; --duration: 198s; --delay: -98s;
+  aspect-ratio: 443 / 320;
+  background-image: url('./assets/cloud-puff.webp');
+}
+.clouds .cloud-wisp {
+  --x: 9%; --y: 34%; --width: 19vw; --opacity: .58; --duration: 258s; --delay: -64s;
+  aspect-ratio: 720 / 227;
+  background-image: url('./assets/cloud-wisp.webp');
+}
+
 @keyframes cloud-drift {
   from { transform: translateX(-105%) }
   to { transform: translateX(100vw) }
