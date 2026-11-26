@@ -1,3 +1,4 @@
+import flatUrl from './assets/flat-test.png'
 import fruitUrl from './assets/fruit-island.png'
 import fruit2xUrl from './assets/fruit-island-2x.webp'
 import quarryUrl from './assets/stone-quarry.webp'
@@ -10,6 +11,19 @@ export type ArenaMap = TerrainMap & {
   largeArt?: { url: string; width: number }
   mask: string
   fighterSize: number
+}
+
+export const FLAT_TEST: ArenaMap = {
+  title: 'Тестовая площадка',
+  width: 2160,
+  height: 900,
+  waterY: 760,
+  spawn: [1080, 1735],
+  shotSpeed: 2.2,
+  contourTolerance: 1.25,
+  art: flatUrl,
+  mask: flatUrl,
+  fighterSize: 70,
 }
 
 export const STONE_QUARRY: ArenaMap = {

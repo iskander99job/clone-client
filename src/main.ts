@@ -1,17 +1,18 @@
 import Phaser from 'phaser'
-import { FRUIT_ARENA, STONE_QUARRY } from './maps'
+import { FLAT_TEST, FRUIT_ARENA, STONE_QUARRY } from './maps'
 import { addIslandFighter, loadIslandFighter } from './island-fighter'
 import { bindMapView } from './map-view'
 import './style.css'
 import './hud.css'
 
 // Keep the island's world dimensions independent of the texture resolution.
-const isFruit = new URLSearchParams(location.search).get('map') === 'fruit'
-const map = isFruit ? FRUIT_ARENA : STONE_QUARRY
+const requestedMap = new URLSearchParams(location.search).get('map')
+const mapId = requestedMap === 'fruit' || requestedMap === 'quarry' ? requestedMap : 'flat'
+const map = { flat: FLAT_TEST, fruit: FRUIT_ARENA, quarry: STONE_QUARRY }[mapId]
 const { width, height, waterY } = map
 const arena = document.querySelector<HTMLElement>('.arena')!
 arena.setAttribute('aria-label', map.title)
-arena.dataset.map = isFruit ? 'fruit' : 'quarry'
+arena.dataset.map = mapId
 document.title = `Кратер — ${map.title}`
 
 const clouds = Array.from(arena.querySelectorAll<HTMLElement>('.clouds span'))

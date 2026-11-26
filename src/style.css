@@ -132,6 +132,7 @@ body { margin: 0 }
   background: linear-gradient(#57658d, #a990ad 52%, #e6aa88 83%);
 }
 
-.arena[data-map="quarry"] .orchard {
+.arena[data-map="quarry"] .orchard,
+.arena[data-map="flat"] .orchard {
   display: none;
 }
