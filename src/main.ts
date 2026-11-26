@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { aim, CELL, Duel, HEIGHT, initPhysics, MAX_WIND, RADIUS, WIDTH, type Fighter, type ReplayFrame } from './duel'
+import { aim, CELL, Duel, HEIGHT, initPhysics, MAX_WIND, RADIUS, WIDTH, type Fighter, type Point, type ReplayFrame } from './duel'
 import { createMatch, getMatch, joinMatch, sessionValue, submitShot, type Match } from './online'
 import './style.css'
 
@@ -23,6 +23,15 @@ const hp = ['player', 'bot'].map(id => ({
   bar: document.querySelector<HTMLProgressElement>('#' + id + '-bar')!,
 }))
 
+const REPLAY_FRAME_MS = 50
+
+function interpolate(from: Point, to: Point, progress: number): Point {
+  return {
+    x: from.x + (to.x - from.x) * progress,
+    y: from.y + (to.y - from.y) * progress,
+  }
+}
+
 class Arena extends Phaser.Scene {
   duel!: Duel
   ground!: Phaser.Textures.CanvasTexture
@@ -36,6 +45,7 @@ class Arena extends Phaser.Scene {
   polling = false
   replayTime = 0
   replayFrame?: ReplayFrame
+  replayProjectile?: ReplayFrame['rocket']
   replaying = false
   replayImpact?: number
 
@@ -208,16 +218,27 @@ class Arena extends Phaser.Scene {
     names[1].textContent = match.seat === 1 ? 'Искра · ты' : 'Искра · друг'
   }
 
-  showReplayFrame(index: number) {
+  showReplayFrame(cursor: number) {
+    const index = Math.floor(cursor)
     const match = this.match!
     const frame = match.replay!.frames[index]
     if (!frame) {
       this.finishReplay()
       return
     }
+    const next = match.replay!.frames[index + 1] ?? frame
+    const progress = cursor - index
+    this.duel.fighters.forEach((fighter, seat) => {
+      fighter.body.setTranslation(interpolate(frame.positions[seat], next.positions[seat], progress), false)
+    })
+    this.replayProjectile = frame.rocket && next.rocket
+      ? {
+          position: interpolate(frame.rocket.position, next.rocket.position, progress),
+          velocity: interpolate(frame.rocket.velocity, next.rocket.velocity, progress),
+        }
+      : frame.rocket
     if (frame === this.replayFrame) return
     this.replayFrame = frame
-    this.duel.fighters.forEach((fighter, seat) => fighter.body.setTranslation(frame.positions[seat], false))
     if (frame.rocket) {
       this.duel.trail.push(frame.rocket.position)
       if (this.duel.trail.length > 12) this.duel.trail.shift()
@@ -266,7 +287,7 @@ class Arena extends Phaser.Scene {
   update(_time: number, delta: number) {
     if (this.replaying) {
       this.replayTime += Math.min(delta, 100)
-      this.showReplayFrame(Math.floor(this.replayTime / 50))
+      this.showReplayFrame(this.replayTime / REPLAY_FRAME_MS)
       if (this.replayImpact !== undefined) this.duel.blastAge = (this.replayTime - this.replayImpact) / 1000
     } else if (!this.match && !this.inviteId && !this.busy) {
       this.accumulator += Math.min(delta, 100)
@@ -412,7 +433,7 @@ class Arena extends Phaser.Scene {
       const opacity = (i + 1) / trail.length
       g.fillStyle(0xffd183, opacity * 0.46).fillCircle(point.x, point.y, 5 * opacity)
     })
-    const projectile = this.replayFrame?.rocket ?? (rocket && { position: rocket.translation(), velocity: rocket.linvel() })
+    const projectile = this.replaying ? this.replayProjectile : rocket && { position: rocket.translation(), velocity: rocket.linvel() }
     if (projectile) {
       const { x, y } = projectile.position
       const velocity = projectile.velocity
