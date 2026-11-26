@@ -164,7 +164,7 @@ export async function addIslandFighter(scene: Phaser.Scene, arena: HTMLElement, 
     const move = Number(held('ArrowRight')) - Number(held('ArrowLeft'))
     if (equipped) {
       const elevation = Number(held('ArrowUp')) - Number(held('ArrowDown'))
-      angle = Math.max(-18, Math.min(80, angle + elevation * 70 * STEP))
+      angle = Math.max(-90, Math.min(90, angle + elevation * 70 * STEP))
     }
     if (!airborne) duel.movePlayer(crouch || landing ? 0 : move)
 
