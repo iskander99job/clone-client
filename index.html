@@ -7,7 +7,14 @@
   <title>Кратер — фруктовый остров</title>
 </head>
 <body>
-  <main id="field" class="arena" aria-label="Фруктовый остров"></main>
+  <main class="arena" aria-label="Фруктовый остров">
+    <div class="orchard" aria-hidden="true"></div>
+    <div class="clouds" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div id="field"></div>
+    <div class="water" aria-hidden="true"></div>
+  </main>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
