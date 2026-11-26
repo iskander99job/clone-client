@@ -1,5 +1,8 @@
 import RAPIER from '@dimforge/rapier2d-compat'
 import { contours } from 'd3-contour'
+import type { FRUIT_ISLAND } from './fruit-island.ts'
+
+export { FRUIT_ISLAND } from './fruit-island.ts'
 
 export const WIDTH = 640
 export const HEIGHT = 510
@@ -14,10 +17,6 @@ export const MAX_WIND = 90
 function rollWind() {
   return (Math.floor(Math.random() * 7) - 3) * (MAX_WIND / 3)
 }
-export const FRUIT_ISLAND = {
-  width: 1440, height: 480, waterY: 396, spawn: [173, 1260], shotSpeed: 1.5,
-}
-
 export type Point = { x: number; y: number }
 export type FighterState = { position: Point; velocity: Point; hp: number; direction: number }
 export type MatchState = {

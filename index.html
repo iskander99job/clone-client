@@ -4,38 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101a24">
-  <title>Кратер — дуэль с ботом</title>
+  <title>Кратер — фруктовый остров</title>
 </head>
 <body>
-  <main class="arena" aria-label="Кратер — дуэль с ботом">
-    <div id="field" aria-label="Поле боя"></div>
-    <div class="hud">
-      <div class="score">
-        <div class="fighter player"><span>Мята</span><strong id="player-hp">100</strong><progress id="player-bar" max="100" value="100" aria-label="Здоровье Мяты"></progress></div>
-        <button id="restart" type="button">Заново</button>
-        <div class="fighter bot"><span>Искра</span><strong id="bot-hp">100</strong><progress id="bot-bar" max="100" value="100" aria-label="Здоровье Искры"></progress></div>
-      </div>
-      <div class="turn">
-        <p id="status" role="status">Загрузка…</p>
-        <p id="wind">Ветер: —</p>
-      </div>
-      <div class="controls">
-        <div class="directions" role="group" aria-label="Движение и прицел">
-          <button class="move left" data-control="left" type="button" aria-label="Идти влево" disabled>←</button>
-          <button class="move right" data-control="right" type="button" aria-label="Идти вправо" disabled>→</button>
-          <button class="aim up" data-control="up" type="button" aria-label="Поднять базуку" disabled>↑</button>
-          <button class="aim down" data-control="down" type="button" aria-label="Опустить базуку" disabled>↓</button>
-        </div>
-        <div class="shot">
-          <output id="angle-value" aria-label="Угол базуки">47°</output>
-          <label>Сила <output id="power-value" for="power">49%</output>
-            <input id="power" type="range" min="15" max="100" value="49" disabled>
-          </label>
-          <button id="fire" type="button" disabled>Выстрелить</button>
-        </div>
-      </div>
-    </div>
-  </main>
+  <main id="field" class="arena" aria-label="Фруктовый остров"></main>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

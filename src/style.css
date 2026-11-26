@@ -1,84 +1,12 @@
 :root {
-  color-scheme: dark;
-  font-family: system-ui, sans-serif;
-  color: #f8f1df;
   background: #101a24;
 }
-* { box-sizing: border-box }
 body { margin: 0 }
 .arena {
   position: relative;
   width: 100%;
   height: 100dvh;
-  min-height: 280px;
   overflow: hidden;
   background: linear-gradient(#2eb9ec 0 20%, #87d8df 49%, #087aa4 78%, #006d9d);
 }
-#field { position: absolute; inset: 0 }
 canvas { display: block }
-.hud {
-  --pad: clamp(8px, 2vw, 24px);
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  padding: max(var(--pad), env(safe-area-inset-top)) max(var(--pad), env(safe-area-inset-right))
-    max(var(--pad), env(safe-area-inset-bottom)) max(var(--pad), env(safe-area-inset-left));
-  pointer-events: none;
-}
-.hud button, .hud input { pointer-events: auto }
-button {
-  font: inherit;
-  font-weight: 800;
-  border: 1px solid #ffffff40;
-  border-radius: 12px;
-  min-height: 44px;
-  cursor: pointer;
-}
-button:focus-visible, input:focus-visible { outline: 3px solid white; outline-offset: 3px }
-button:disabled { cursor: default; opacity: .5 }
-#restart { background: #152b3bdf; color: inherit; padding-inline: 12px }
-.score { display: flex; align-items: start; justify-content: space-between; gap: 8px }
-.fighter {
-  width: min(32vw, 200px);
-  background: #152b3bdf;
-  border-radius: 12px;
-  padding: 7px 9px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 4px 5px;
-  font-size: 14px;
-  font-weight: 750;
-}
-.player { --team: #8bf0b9 }
-.bot { --team: #ff9b6d }
-.fighter strong { color: var(--team) }
-progress { appearance: none; grid-column: span 2; width: 100%; height: 6px; border: 0; background: #263746; border-radius: 8px; overflow: hidden }
-progress::-webkit-progress-bar { background: #263746 }
-progress::-webkit-progress-value { background: var(--team) }
-progress::-moz-progress-bar { background: var(--team) }
-.turn { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 6px }
-.turn p { margin: 0; padding: 5px 9px; border-radius: 10px; background: #152b3bdf; font-size: 14px; font-weight: 750 }
-.controls { margin-top: auto; display: flex; justify-content: space-between; align-items: end; gap: 6px }
-.directions {
-  --key-size: clamp(44px, 10vw, 62px);
-  display: grid;
-  grid-template-columns: repeat(3, var(--key-size));
-  grid-template-rows: repeat(2, var(--key-size));
-  gap: 4px;
-}
-.directions button { color: #fff; font-size: 25px; touch-action: none; user-select: none; -webkit-touch-callout: none }
-.directions button[data-held] { filter: brightness(1.45) }
-.move { background: #a93443e6 }
-.aim { background: #1b704fe6 }
-.up { grid-area: 1 / 2 }
-.down { grid-area: 2 / 2 }
-.left { grid-area: 2 / 1 }
-.right { grid-area: 2 / 3 }
-.shot { width: clamp(110px, 23vw, 218px); display: grid; gap: 5px }
-.shot label, #angle-value { padding: 4px 8px; border-radius: 8px; background: #152b3bdf; font-size: 14px; font-weight: 750 }
-#angle-value { justify-self: end }
-label { display: grid; grid-template-columns: 1fr auto; align-items: center }
-output { color: #b4f3d0; font-variant-numeric: tabular-nums }
-input { grid-column: span 2; width: 100%; margin: 0; min-height: 25px; accent-color: #8bf0b9 }
-#fire { color: #101a24; background: #ffd370; font-size: clamp(13px, 3vw, 16px) }
