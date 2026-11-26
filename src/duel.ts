@@ -11,7 +11,7 @@ export const CELL = 2
 export const RADIUS = 31
 export const initPhysics = () => RAPIER.init()
 const GRAVITY = 370
-const BLAST = 67
+export const BLAST = 67
 export const STEP = 1 / 60
 export const MAX_WIND = 90
 
@@ -177,17 +177,16 @@ export class Duel {
     return column >= 0 && column < columns && row >= 0 && row < rows && this.mask[row * columns + column] === 1
   }
 
-  muzzle(fighter: Fighter, angle: number) {
-    const origin = fighter.body.translation()
+  muzzle(fighter: Fighter, angle: number, origin = fighter.body.translation()) {
     const vector = aim(angle, fighter.direction)
     return { x: origin.x + vector.x * 48, y: origin.y + vector.y * 48 }
   }
 
-  fire(angle: number, power: number) {
+  fire(angle: number, power: number, grip?: Point) {
     if (this.phase !== 'aim' && this.phase !== 'bot') return
     if (this.turn === 0 && !this.online) this.movePlayer(0)
     const fighter = this.fighters[this.turn]
-    const origin = this.muzzle(fighter, angle)
+    const origin = this.muzzle(fighter, angle, grip)
     const direction = aim(angle, fighter.direction)
     const speed = (120 + power * 5.6) * this.shotSpeed
     this.phase = 'flight'
@@ -251,10 +250,7 @@ export class Duel {
       this.movePlayer(move)
       this.angle = Math.max(12, Math.min(84, this.angle + elevation))
     }
-    this.elapsed += STEP
-    this.blastAge += STEP
-    const previous = this.rocket?.translation()
-    this.world.step()
+    this.stepPhysics()
     for (const fighter of this.fighters) {
       const point = fighter.body.translation()
       if (point.y >= (this.waterY ?? this.height + 65) || point.x < -90 || point.x > this.width + 90) fighter.hp = 0
@@ -263,6 +259,23 @@ export class Duel {
       this.advance()
       return
     }
+    if (this.phase === 'settle' && this.elapsed > 0.8) {
+      const moving = this.fighters.some(fighter => fighter.hp > 0 &&
+        Math.hypot(fighter.body.linvel().x, fighter.body.linvel().y) > 10)
+      if (!moving || this.elapsed > 4) this.advance()
+    }
+    if (this.phase === 'bot' && this.elapsed > 0.7) {
+      const { angle, power } = this.chooseBotShot()
+      this.botAngle = angle
+      this.fire(angle, power)
+    }
+  }
+
+  stepPhysics() {
+    this.elapsed += STEP
+    this.blastAge += STEP
+    const previous = this.rocket?.translation()
+    this.world.step()
     if (previous && this.rocket) {
       const current = this.rocket.translation()
       const travel = { x: current.x - previous.x, y: current.y - previous.y }
@@ -282,16 +295,6 @@ export class Duel {
       if (current.x < -60 || current.x > this.width + 60 || current.y >= (this.waterY ?? this.height + 50) || this.elapsed > 6) {
         this.finishFlight()
       }
-    }
-    if (this.phase === 'settle' && this.elapsed > 0.8) {
-      const moving = this.fighters.some(fighter => fighter.hp > 0 &&
-        Math.hypot(fighter.body.linvel().x, fighter.body.linvel().y) > 10)
-      if (!moving || this.elapsed > 4) this.advance()
-    }
-    if (this.phase === 'bot' && this.elapsed > 0.7) {
-      const { angle, power } = this.chooseBotShot()
-      this.botAngle = angle
-      this.fire(angle, power)
     }
   }
 

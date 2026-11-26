@@ -20,7 +20,7 @@
     <section class="hud" aria-label="Интерфейс дуэли">
       <div class="hud-top">
         <div class="fighter fighter-player">
-          <span class="avatar" aria-hidden="true">🍉</span>
+          <span class="avatar avatar-player" aria-hidden="true"></span>
           <div class="fighter-stats">
             <div class="health">
               <progress aria-label="Здоровье игрока" max="100" value="100"></progress>
@@ -42,16 +42,20 @@
       </div>
       <div class="hud-bottom">
         <div class="direction-pad" role="group" aria-label="Движение">
-          <button class="hud-button up" type="button" aria-label="Вверх" aria-disabled="true">↑</button>
+          <button class="hud-button up" type="button" aria-label="Прицел выше" aria-disabled="true">↑</button>
           <button class="hud-button left" type="button" aria-label="Влево" aria-disabled="true">←</button>
-          <button class="hud-button down" type="button" aria-label="Вниз" aria-disabled="true">↓</button>
+          <button class="hud-button down" type="button" aria-label="Прицел ниже" aria-disabled="true">↓</button>
           <button class="hud-button right" type="button" aria-label="Вправо" aria-disabled="true">→</button>
         </div>
         <div class="hud-actions" role="group" aria-label="Действия">
           <button class="hud-button shoot" type="button" aria-label="Выстрел" aria-disabled="true"><span class="target-icon" aria-hidden="true"></span></button>
-          <button class="hud-button inventory" type="button" aria-label="Оружие" aria-disabled="true">
+          <button class="hud-button inventory" type="button" aria-label="Инвентарь" aria-expanded="false" aria-controls="weapon-menu" aria-disabled="true">
             <img class="inventory-crate" src="/src/assets/inventory-crate.webp" alt="">
           </button>
+          <div class="weapon-menu" id="weapon-menu" role="group" aria-label="Оружие" hidden>
+            <button type="button" data-weapon="bazooka">Базука</button>
+            <button type="button" data-weapon="none">Убрать</button>
+          </div>
           <button class="hud-button jump-forward" type="button" aria-label="Прыжок вперёд" aria-disabled="true"><span class="jump-icon" aria-hidden="true"></span></button>
           <button class="hud-button jump-back" type="button" aria-label="Прыжок назад" aria-disabled="true"><span class="jump-icon jump-icon-back" aria-hidden="true"></span></button>
         </div>

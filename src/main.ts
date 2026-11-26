@@ -62,9 +62,9 @@ class Arena extends Phaser.Scene {
 
   create() {
     if (!this.textures.exists('terrain-art')) return
-    this.add.image(0, 0, 'terrain-art').setOrigin(0).setDisplaySize(width, height)
+    const terrain = this.add.image(0, 0, 'terrain-art').setOrigin(0).setDisplaySize(width, height)
     bindMapView(arena, this, width, height, waterY)
-    void addIslandFighter(this, arena, map).catch(error => {
+    void addIslandFighter(this, arena, map, terrain).catch(error => {
       console.error('Не удалось запустить управление персонажем', error)
     })
   }
