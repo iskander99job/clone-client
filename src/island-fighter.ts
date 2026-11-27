@@ -7,7 +7,11 @@ import walkConfig from './assets/bear/walk.config.json'
 import idleConfig from './assets/bear/idle.config.json'
 import jumpConfig from './assets/bear/jump.config.json'
 import backflipConfig from './assets/bear/backflip.config.json'
+import armsConfig from './assets/bear/arms.config.json'
+import weaponConfig from './assets/bear/weapon.config.json'
+import weaponMotion from './assets/bear/weapon-motion.config.json'
 import { CharacterAnimator } from './character-animator'
+import { WeaponController, type WeaponConfig } from './weapon-controller'
 import bazookaSvg from './assets/bazooka.svg?raw'
 import { SVG_NS } from './svg-viewport'
 
@@ -33,7 +37,7 @@ export async function addIslandFighter(
   const context = canvas.getContext('2d')!
   context.drawImage(source, 0, 0, width, height)
   const pixels = context.getImageData(0, 0, width, height).data
-  const { Duel, initPhysics, RADIUS, STEP, BLAST, aim, terrainMaskFromPixels } = await import('./duel')
+  const { Duel, initPhysics, RADIUS, STEP, BLAST, terrainMaskFromPixels } = await import('./duel')
   await initPhysics()
   if (!scene.sys.isActive()) return
 
@@ -49,7 +53,7 @@ export async function addIslandFighter(
   const bodyArt = sprite.querySelector('svg')!
   bodyArt.setAttribute('x', String(-FRAME / 2))
   bodyArt.setAttribute('y', String(-FEET))
-  const animator = new CharacterAnimator(bodyArt, bearRig, walkConfig, idleConfig, jumpConfig, backflipConfig)
+  const animator = new CharacterAnimator(bodyArt, bearRig, walkConfig, idleConfig, jumpConfig, backflipConfig, armsConfig)
   animator.setFacing(fighter.direction < 0 ? 'left' : 'right')
   animator.playIdle()
   const baseScale = map.fighterSize / FRAME * 0.8
@@ -75,26 +79,22 @@ export async function addIslandFighter(
   const unequip = menu.querySelector<HTMLButtonElement>('[data-weapon="none"]')!
   const up = button('.up')
   const down = button('.down')
-  let equipped = false
-  let angle = 24
-  const barrel = actors.appendChild(document.createElementNS(SVG_NS, 'g'))
-  barrel.classList.add('bazooka')
-  barrel.innerHTML = bazookaSvg
-  barrel.querySelector('svg')!.setAttribute('y', '-12')
+  const weaponAsset = new DOMParser().parseFromString(bazookaSvg, 'image/svg+xml').documentElement as unknown as SVGSVGElement
+  const weapon = new WeaponController(animator, [{ config: weaponConfig as WeaponConfig, svg: weaponAsset }], weaponMotion)
+  weapon.setAimAngle(24)
   const effects = scene.add.graphics().setName('shot-effects')
   let lastBlast: Point | undefined
 
+  function syncShoot() {
+    shoot.toggleAttribute('disabled', duel.phase !== 'aim' || !weapon.canShoot())
+  }
+
   function syncWeapon() {
+    const equipped = weapon.selectedWeaponId === weaponConfig.weaponId
     bazooka.setAttribute('aria-pressed', String(equipped))
     unequip.hidden = !equipped
     up.disabled = down.disabled = !equipped
-    shoot.disabled = !equipped || duel.phase !== 'aim'
-    barrel.style.display = equipped ? '' : 'none'
-  }
-
-  function grip(): Point {
-    const position = body.translation()
-    return { x: position.x + fighter.direction * 6, y: position.y + 7 }
+    syncShoot()
   }
 
   inventory.addEventListener('click', () => {
@@ -117,15 +117,25 @@ export async function addIslandFighter(
   menu.querySelector('[data-close-inventory]')!.addEventListener('click', () => menu.close(), { signal })
   for (const [option, active] of [[bazooka, true], [unequip, false]] as const) {
     option.addEventListener('click', () => {
-      equipped = active
+      if (active) weapon.equip(weaponConfig.weaponId)
+      else weapon.unequip()
       syncWeapon()
       menu.close()
     }, { signal })
   }
   shoot.addEventListener('click', () => {
-    if (!equipped || duel.phase !== 'aim') return
-    duel.fire(angle, 20, grip())
-    syncWeapon()
+    if (duel.phase !== 'aim' || !weapon.canShoot()) return
+    const muzzle = weapon.getMuzzlePosition()
+    const direction = weapon.getAimDirection()
+    if (!muzzle || !direction) return
+    const position = body.translation()
+    const origin = {
+      x: position.x + (muzzle.x - FRAME / 2) * baseScale,
+      y: position.y + RADIUS + (muzzle.y - FEET) * baseScale,
+    }
+    duel.fire(weapon.aimAngle, 20, { origin, direction })
+    weapon.playRecoil()
+    syncShoot()
   }, { signal })
   syncWeapon()
 
@@ -166,7 +176,7 @@ export async function addIslandFighter(
   window.addEventListener('keydown', event => {
     if (menu.open || event.altKey || event.ctrlKey || event.metaKey) return
     if (event.code === 'ArrowLeft' || event.code === 'ArrowRight'
-      || (equipped && (event.code === 'ArrowUp' || event.code === 'ArrowDown'))) {
+      || (weapon.selectedWeaponId && (event.code === 'ArrowUp' || event.code === 'ArrowDown'))) {
       event.preventDefault()
       heldKeys.add(event.code)
     } else if (event.code === 'Space' && !(event.target instanceof HTMLButtonElement)) {
@@ -184,9 +194,9 @@ export async function addIslandFighter(
     const directions = [...pressed.values()]
     const held = (code: string) => directions.includes(code) || heldKeys.has(code)
     const move = Number(held('ArrowRight')) - Number(held('ArrowLeft'))
-    if (equipped) {
+    if (weapon.selectedWeaponId) {
       const elevation = Number(held('ArrowUp')) - Number(held('ArrowDown'))
-      angle = Math.max(-90, Math.min(90, angle + elevation * 70 * STEP))
+      if (elevation) weapon.setAimAngle(weapon.aimAngle + elevation * 70 * STEP)
     }
     if (!flight) duel.movePlayer(animator.isJumping ? 0 : move, WALK_SPEED)
 
@@ -202,7 +212,6 @@ export async function addIslandFighter(
     duel.stepPhysics()
     if (duel.phase === 'settle') {
       duel.phase = 'aim'
-      syncWeapon()
     }
     if (duel.blast && lastBlast !== duel.blast) {
       lastBlast = duel.blast
@@ -240,12 +249,8 @@ export async function addIslandFighter(
     animator.update(STEP * 1000, strideSpeed)
     sprite.setAttribute('transform', `translate(${feet.x} ${feet.y + RADIUS}) scale(${baseScale})`)
 
-    if (equipped) {
-      const origin = grip()
-      const direction = aim(angle, facing)
-      const rotation = Math.atan2(direction.y, direction.x) * 180 / Math.PI
-      barrel.setAttribute('transform', `translate(${origin.x} ${origin.y}) rotate(${rotation}) scale(1 ${facing})`)
-    }
+    weapon.update(STEP * 1000)
+    syncShoot()
     effects.clear()
     for (const [index, point] of duel.trail.entries()) {
       effects.fillStyle(0xffd586, (index + 1) / duel.trail.length * 0.65).fillCircle(point.x, point.y, 4)

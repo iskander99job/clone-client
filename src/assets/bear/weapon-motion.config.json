@@ -1,0 +1,11 @@
+{
+  "equipDurationMs": 200,
+  "unequipDurationMs": 180,
+  "lowerDistance": 38,
+  "lowerAngleDeg": 22,
+  "recoilDistance": 14,
+  "recoilAngleDeg": 4,
+  "recoilDurationMs": 50,
+  "recoveryDurationMs": 180,
+  "bodyRecoilDeg": 1.4
+}

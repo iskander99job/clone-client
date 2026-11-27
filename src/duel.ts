@@ -182,12 +182,12 @@ export class Duel {
     return { x: origin.x + vector.x * 48, y: origin.y + vector.y * 48 }
   }
 
-  fire(angle: number, power: number, grip?: Point) {
+  fire(angle: number, power: number, shot?: { origin: Point; direction: Point }) {
     if (this.phase !== 'aim' && this.phase !== 'bot') return
     if (this.turn === 0 && !this.online) this.movePlayer(0)
     const fighter = this.fighters[this.turn]
-    const origin = this.muzzle(fighter, angle, grip)
-    const direction = aim(angle, fighter.direction)
+    const origin = shot?.origin ?? this.muzzle(fighter, angle)
+    const direction = shot?.direction ?? aim(angle, fighter.direction)
     const speed = (120 + power * 5.6) * this.shotSpeed
     this.phase = 'flight'
     this.elapsed = 0

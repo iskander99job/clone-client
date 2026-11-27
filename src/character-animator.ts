@@ -1,10 +1,10 @@
 /**
- * Three-part SVG IDLE / WALK / JUMP / BACKFLIP controller. No renderer, scheduler or framework dependency.
+ * Three- or five-part SVG IDLE / WALK / JUMP / BACKFLIP controller. No renderer, scheduler or framework dependency.
  * deltaTime: milliseconds; movementSpeed: nonnegative SVG user units / second.
  * Move the world/container by movementSpeed * deltaTime / 1000 in the facing
  * direction. Do not separately scale time: use the same speed for both systems.
  * Convert world pixels/sec to SVG units/sec when the rendered scale is not 1:1.
- * Only the three outer part transforms and a runtime rotation wrapper are written; inner art is untouched.
+ * Only the outer part transforms and a runtime rotation wrapper are written; inner art is untouched.
  * BACKFLIP uses externally supplied normalized flight progress (monotonic 0..1),
  * notifyFlightProgress(p) or notifyAirborne(vy, proximity, p). No flight timer.
  * cancelJump() cancels preparation or settles an interrupted airborne action;
@@ -28,12 +28,31 @@
  */
 export type Facing = 'left' | 'right';
 export type Foot = 'foot_far' | 'foot_near';
+export type Arm = 'arm_far' | 'arm_near';
+const ARMS = ['arm_far','arm_near'] as const;
+export interface ArmPose { x: number; y: number; angle: number }
+export interface ArmsConfig {
+  enabled: boolean; intensity: number;
+  idleSwayDeg: number;
+  walkSwingDeg: number; walkShift: number;
+  jumpTakeoffDeg: number; jumpAirDeg: number; jumpLift: number;
+  backflipTuckDeg: number; backflipLift: number; backflipInward: number;
+  overrideBlendMs: number;
+}
+export const DEFAULT_ARMS: Readonly<ArmsConfig> = Object.freeze({
+  enabled:true, intensity:1, idleSwayDeg:1.6, walkSwingDeg:10, walkShift:2.5,
+  jumpTakeoffDeg:9, jumpAirDeg:6, jumpLift:2,
+  backflipTuckDeg:12, backflipLift:3, backflipInward:3, overrideBlendMs:125
+});
+const armNeutral = (): ArmPose => ({x:0,y:0,angle:0});
+const mixArm = (a:ArmPose,b:ArmPose,w:number): ArmPose => ({x:a.x+(b.x-a.x)*w,y:a.y+(b.y-a.y)*w,angle:a.angle+(b.angle-a.angle)*w});
+
 export interface Point { x: number; y: number }
-export interface RigPart { pivot?: Point; position?: Point; rotation_deg?: number; svg_id?: string; data_part?: string }
+export interface RigPart { pivot?: Point; position?: Point; rotation_deg?: number; svg_id?: string; data_part?: string; pivotX?: number; pivotY?: number; grip?: Point; gripX?: number; gripY?: number }
 export interface CharacterRig {
   viewBox: readonly number[];
   coordinate_system?: { forward?: string };
-  parts: Record<Foot | 'body', RigPart>;
+  parts: Record<Foot | 'body', RigPart> & Partial<Record<Arm,RigPart>>;
 }
 export interface WalkConfig {
   cycleDurationMs: number;
@@ -123,7 +142,7 @@ export const DEFAULT_BACKFLIP: Readonly<BackflipConfig> = Object.freeze({
 export type AnimationState = 'neutral' | 'idle' | 'walk' | 'jump' | 'backflip';
 type Locomotion = 'idle' | 'walk';
 export interface FootPose { x: number; y: number; angle: number; planted: boolean }
-export interface WalkPose { foot_far: FootPose; foot_near: FootPose; body: { y: number; angle: number; sx: number; sy: number } }
+export interface WalkPose { arms?: Partial<Record<Arm,ArmPose>>; foot_far: FootPose; foot_near: FootPose; body: { y: number; angle: number; sx: number; sy: number } }
 const TAU = 2 * Math.PI;
 const mod = (x: number) => ((x % 1) + 1) % 1;
 const fmt = (n: number) => Math.abs(n) < 0.0000005 ? '0' : String(+n.toFixed(6));
@@ -189,10 +208,27 @@ function blendPose(a: WalkPose, b: WalkPose, w: number): WalkPose {
   if (w >= 1) return b;
   const mix = (x:number,y:number) => x+(y-x)*w;
   const foot = (x:FootPose,y:FootPose): FootPose => ({x:mix(x.x,y.x),y:mix(x.y,y.y),angle:mix(x.angle,y.angle),planted:x.planted && y.planted});
-  return {foot_far:foot(a.foot_far,b.foot_far),foot_near:foot(a.foot_near,b.foot_near),body:{y:mix(a.body.y,b.body.y),angle:mix(a.body.angle,b.body.angle),sx:mix(a.body.sx,b.body.sx),sy:mix(a.body.sy,b.body.sy)}};
+  const result: WalkPose = {foot_far:foot(a.foot_far,b.foot_far),foot_near:foot(a.foot_near,b.foot_near),body:{y:mix(a.body.y,b.body.y),angle:mix(a.body.angle,b.body.angle),sx:mix(a.body.sx,b.body.sx),sy:mix(a.body.sy,b.body.sy)}};
+  if(a.arms||b.arms){result.arms={};for(const n of ARMS)if(a.arms?.[n]||b.arms?.[n])result.arms[n]=mixArm(a.arms?.[n]||armNeutral(),b.arms?.[n]||armNeutral(),w);}
+  return result;
 }
 export class CharacterAnimator {
   private readonly groups: Record<Foot | 'body', SVGGElement>;
+  private readonly armGroups: Partial<Record<Arm,SVGGElement>> = {};
+  private readonly armOriginal: Partial<Record<Arm,string|null>> = {};
+  private readonly armPivots: Partial<Record<Arm,Point>> = {};
+  private readonly armGrips: Partial<Record<Arm,Point>> = {};
+  private armsConfig: ArmsConfig;
+  private armWeight = 1;
+  private armWeightFrom = 1;
+  private armWeightElapsed = 125;
+  private armOverrides: Partial<Record<Arm,{pose:ArmPose;from:ArmPose;weight:number;fromWeight:number;targetWeight:number;elapsed:number}>> = {};
+  private weaponArmOwner = false;
+  // Direct, frame-owned visual grip channel. Base pose and clocks remain untouched.
+  private weaponDirect: Partial<Record<Arm,ArmPose>> | null = null;
+  private weaponBodyRecoil = 0;
+  private appliedArms: Partial<Record<Arm,ArmPose>> = {};
+
   private readonly root: SVGGElement;
   private readonly defaultRotationPivot: Point;
   private backflipConfig: BackflipConfig;
@@ -227,7 +263,7 @@ export class CharacterAnimator {
   private transition: {from: WalkPose; elapsed: number; duration: number} | null = null;
   private lastPose: WalkPose | null = null;
 
-  constructor(svg: SVGSVGElement, rig: CharacterRig, config: Partial<WalkConfig> = {}, idleConfig: Partial<IdleConfig> = {}, jumpConfig: Partial<JumpConfig> = {}, backflipConfig: Partial<BackflipConfig> = {}) {
+  constructor(svg: SVGSVGElement, rig: CharacterRig, config: Partial<WalkConfig> = {}, idleConfig: Partial<IdleConfig> = {}, jumpConfig: Partial<JumpConfig> = {}, backflipConfig: Partial<BackflipConfig> = {}, armsConfig: Partial<ArmsConfig> = {}) {
     this.box = Array.from(rig.viewBox);
     if (this.box.length !== 4 || this.box.some(n => !Number.isFinite(n)) || this.box[2] <= 0 || this.box[3] <= 0) throw new Error('Invalid rig.viewBox');
     this.nativeFacing = rig.coordinate_system?.forward === 'right' ? 'right' : 'left';
@@ -241,6 +277,17 @@ export class CharacterAnimator {
     this.groups = {foot_far: group('foot_far'), body: group('body'), foot_near: group('foot_near')};
     this.original = {foot_far: this.groups.foot_far.getAttribute('transform'), body: this.groups.body.getAttribute('transform'), foot_near: this.groups.foot_near.getAttribute('transform')};
     this.pivots = {foot_far: point(rig.parts.foot_far.pivot, 'foot_far pivot'), foot_near: point(rig.parts.foot_near.pivot, 'foot_near pivot')};
+    this.armsConfig = this.validateArms({...DEFAULT_ARMS,...armsConfig});
+    this.armWeight=this.armWeightFrom=this.armsConfig.enabled?this.armsConfig.intensity:0;this.armWeightElapsed=this.armsConfig.overrideBlendMs;
+    for(const n of ARMS){
+      const g=Array.from(svg.children).find(el=>el.localName==='g'&&el.getAttribute('data-part')===n) as SVGGElement|undefined;
+      if(!g)continue;
+      const r=rig.parts[n]; if(!r)throw new Error('Missing rig part '+n);
+      this.armGroups[n]=g; this.armOriginal[n]=g.getAttribute('transform');
+      this.armPivots[n]=point(r.pivot||(r.pivotX!==undefined&&r.pivotY!==undefined?{x:r.pivotX,y:r.pivotY}:undefined),n+' pivot');
+      const grip=r.grip||(r.gripX!==undefined&&r.gripY!==undefined?{x:r.gripX,y:r.gripY}:undefined);
+      if(grip)this.armGrips[n]=point(grip,n+' grip');
+    }
     this.config = validate({...DEFAULT_WALK, ...config});
     this.idleConfig = validateIdle({...DEFAULT_IDLE, ...idleConfig});
     this.jumpConfig = validateJump({...DEFAULT_JUMP, ...jumpConfig});
@@ -251,10 +298,90 @@ export class CharacterAnimator {
     this.defaultRotationPivot=center;
     this.root=svg.ownerDocument.createElementNS('http://www.w3.org/2000/svg','g');
     this.root.setAttribute('data-animation-root','rotation');
-    const ordered=Array.from(svg.children).filter(el=>Object.values(this.groups).some(g=>g===el));
+    const ordered=Array.from(svg.children).filter(el=>[...Object.values(this.groups),...Object.values(this.armGroups)].some(g=>g===el));
     svg.insertBefore(this.root,ordered[0]); ordered.forEach(el=>this.root.appendChild(el));
     svg.style.overflow='visible';
     this.phase = this.config.stanceRatio / 2;
+  }
+  private validateArms(c:ArmsConfig): ArmsConfig {
+    if(typeof c.enabled!=='boolean')throw new TypeError('arms enabled must be boolean');
+    const limits = {intensity:1,idleSwayDeg:2,walkSwingDeg:12,walkShift:6,jumpTakeoffDeg:20,jumpAirDeg:20,jumpLift:8,backflipTuckDeg:25,backflipLift:10,backflipInward:10,overrideBlendMs:1000} as const;
+    for(const k of Object.keys(limits) as (keyof typeof limits)[])if(finite(c[k],k)<0||c[k]>limits[k])throw new RangeError('Invalid ARMS '+k);
+    if(c.overrideBlendMs<1)throw new RangeError('overrideBlendMs must be positive');return c;
+  }
+  get hasArms(): boolean {return ARMS.some(n=>!!this.armGroups[n]);}
+  setArmsConfig(config:Partial<ArmsConfig>): void {
+    const old=this.armsConfig;this.armsConfig=this.validateArms({...old,...config});
+    if(old.enabled!==this.armsConfig.enabled||old.intensity!==this.armsConfig.intensity){this.armWeightFrom=this.armWeight;this.armWeightElapsed=0;}
+  }
+  /** Disable independent swings, not body attachment. Changes blend on external update. */
+  setArmsEnabled(enabled:boolean):void {this.setArmsConfig({enabled});}
+  /** Future weapon pose in native SVG coordinates, relative to the moving body.
+   * null releases the override; undefined leaves that arm unchanged. No weapon logic. */
+  setArmOverride(overrides:Partial<Record<Arm,ArmPose|null>>):void {
+    if(this.weaponArmOwner)return;
+    this.retargetArmOverrides(overrides);
+  }
+  /** Weapon ownership takes priority over base motion and generic overrides. */
+  setWeaponArmOverride(overrides:Partial<Record<Arm,ArmPose|null>>):void {
+    if(!this.weaponArmOwner){this.armOverrides={};this.weaponArmOwner=true;}
+    this.retargetArmOverrides(overrides);
+  }
+  releaseWeaponArmOverride():void {
+    this.weaponDirect=null;
+    this.weaponArmOwner=false;this.retargetArmOverrides({arm_near:null,arm_far:null});
+  }
+  /** Exact local arm pose, before mirror/body/global rotation. */
+  getAppliedArmPose(n:Arm):ArmPose {return {...(this.appliedArms[n]||armNeutral())};}
+  getBaseArmPose(n:Arm):ArmPose {return mixArm(armNeutral(),this.lastPose?.arms?.[n]||armNeutral(),this.armWeight);}
+  /** Grip controller owns the blend clock; this setter never restarts it. */
+  setWeaponArmPoseImmediate(poses:Partial<Record<Arm,ArmPose>>|null):void {
+    if(poses){for(const v of Object.values(poses))if(v)for(const k of ['x','y','angle'] as const)finite(v[k],k);}
+    this.weaponDirect=poses?structuredClone(poses):null;this.weaponArmOwner=!!poses;this.armOverrides={};
+  }
+  /** Additive visual tilt only, in native body space; not written into WalkPose. */
+  setWeaponBodyRecoil(angle:number):void {this.weaponBodyRecoil=finite(angle,'weapon body recoil');}
+  private visualBody(pose:WalkPose):WalkPose['body'] {return {...pose.body,angle:pose.body.angle+this.weaponBodyRecoil};}
+  private retargetArmOverrides(overrides:Partial<Record<Arm,ArmPose|null>>):void {
+    for(const n of ARMS){const v=overrides[n];if(v===undefined||!this.armGroups[n])continue;
+      const old=this.armOverrides[n];const from=this.appliedArms[n]||armNeutral();
+      if(v){
+        for(const k of ['x','y','angle'] as const)finite(v[k],n+' '+k);
+        if(old?.targetWeight===1) { old.pose={...v}; } // retarget, never restart an active blend
+        else this.armOverrides[n]={pose:{...v},from:{...from},weight:0,fromWeight:0,targetWeight:1,elapsed:0};
+      } else if(old?.targetWeight===1) this.armOverrides[n]={pose:{...from},from:{...from},weight:1,fromWeight:1,targetWeight:0,elapsed:0};
+    }
+  }
+  /** Refresh targets in the same frame, without advancing any animation or blend clock. */
+  refreshArmOverrides():void {
+    if(this.lastPose)this.render(this.lastPose);else {this.render(neutralPose());this.lastPose=null;}
+  }
+  /** Runtime group in which an independent prop may be inserted. Rotation is inherited once. */
+  get attachmentRoot():SVGGElement {return this.root;}
+  /** Assembled native rig space -> runtime root coordinates, excluding global rotation. */
+  getBodyFrame():DOMMatrix {
+    const b=this.visualBody(this.lastPose||neutralPose());
+    const p=this.config.bodyPivot||{x:(this.pivots.foot_far.x+this.pivots.foot_near.x)/2,y:(this.pivots.foot_far.y+this.pivots.foot_near.y)/2};
+    const m=new DOMMatrix();
+    if(this.facing!==this.nativeFacing)m.translateSelf(2*this.box[0]+this.box[2],0).scaleSelf(-1,1);
+    return m.translateSelf(0,b.y).translateSelf(p.x,p.y).rotateSelf(b.angle).scaleSelf(b.sx,b.sy).translateSelf(-p.x,-p.y);
+  }
+  /** Rig pivots and grips, before body / local / facing transformations. */
+  getArmRig(n:Arm):{pivot:Point;grip:Point}|null {
+    const pivot=this.armPivots[n],grip=this.armGrips[n];return pivot&&grip?{pivot:{...pivot},grip:{...grip}}:null;
+  }
+  getArmOverrideWeight(n:Arm):number {return this.weaponDirect?.[n]?1:this.armOverrides[n]?.weight||0;}
+  /** Runtime root -> assembled SVG coordinates (no CSS/world placement). */
+  getRootFrame():DOMMatrix {const p=this.rotationPivot;return new DOMMatrix().translateSelf(p.x,p.y).rotateSelf(this.rotationAngle).translateSelf(-p.x,-p.y);}
+  private advanceArms(dt:number):void {
+    const ms=this.armsConfig.overrideBlendMs;
+    this.armWeightElapsed=Math.min(ms,this.armWeightElapsed+dt);
+    const dest=this.armsConfig.enabled?this.armsConfig.intensity:0;
+    this.armWeight=this.armWeightFrom+(dest-this.armWeightFrom)*smooth(this.armWeightElapsed/ms);
+    for(const n of ARMS){const o=this.armOverrides[n];if(!o)continue;o.elapsed=Math.min(ms,o.elapsed+dt);o.weight=o.fromWeight+(o.targetWeight-o.fromWeight)*smooth(o.elapsed/ms);if(o.targetWeight===0&&o.elapsed===ms)delete this.armOverrides[n];}
+  }
+  private withArms(p:WalkPose,fn:(n:Arm)=>ArmPose):WalkPose {
+    if(this.hasArms){p.arms={};for(const n of ARMS)if(this.armGroups[n])p.arms[n]=fn(n);}return p;
   }
   get isWalking(): boolean { return this.state === 'walk'; }
   get animationState(): AnimationState { return this.state; }
@@ -300,6 +427,7 @@ export class CharacterAnimator {
     }
   }
   get direction(): Facing { return this.facing; }
+  getNativeFacing(): Facing {return this.nativeFacing;}
   get referenceSpeed(): number { return nominalMovementSpeed(this.config); }
   get cycleMs(): number { return this.config.cycleDurationMs; }
   get idleCycleMs(): number { return this.idleConfig.cycleDurationMs; }
@@ -431,7 +559,7 @@ export class CharacterAnimator {
       const angle = -this.nativeSign*c.airborneFootRotationDeg*tuck;
       p[n] = {x:0,y:-c.airborneFootLift*tuck-this.soleCorrection(n,angle),angle,planted:false};
     }
-    return p;
+    return this.withArms(p,n=>{const a=this.armsConfig;const lift=(takingOff?a.jumpTakeoffDeg:a.jumpAirDeg)*retain*(falling?.6:1)*(n==='arm_far'?.75:1);return {angle:-this.nativeSign*lift,x:0,y:-a.jumpLift*retain*(takingOff?.7:falling?.5:1)};});
   }
   private flipFlightPose(progress:number,c:BackflipConfig): WalkPose {
     const tuck=smooth(progress/c.tuckEnd)*(1-smooth((progress-c.untuckStart)/(1-c.untuckStart)))*c.tuckIntensity;
@@ -441,7 +569,7 @@ export class CharacterAnimator {
       const a=(n==='foot_far'?-1:1)*c.tuckRotationDeg*tuck;
       p[n]={x:0,y:-c.tuckLift*tuck-this.soleCorrection(n,a),angle:a,planted:false};
     }
-    return p;
+    return this.withArms(p,n=>{const a=this.armsConfig,sign=n==='arm_near'?-1:1;return {angle:this.nativeSign*sign*a.backflipTuckDeg*tuck,x:-this.nativeSign*sign*a.backflipInward*tuck,y:-a.backflipLift*tuck};});
   }
   private advanceBackflipFlight(delta:number): WalkPose {
     const c=this.backflipActive!;
@@ -463,6 +591,7 @@ export class CharacterAnimator {
     const take=smooth(this.jumpElapsed/c.takeoffDurationMs);
     const stretch=(1-smooth(t/c.tuckEnd))*Math.sin(Math.PI*.5*take);
     target.body.sy+=c.takeoffStretch*stretch;target.body.sx-=c.takeoffNarrow*stretch;
+    for(const n of ARMS){const arm=target.arms?.[n];if(arm){arm.angle-=this.nativeSign*this.armsConfig.jumpTakeoffDeg*.65*stretch;arm.y-=this.armsConfig.jumpLift*stretch;}}
     const pose=blendPose(this.launchPose,target,take);
     if(this.jumpStage==='takeoff'&&take>=1)this.enterJump('airborne');
     // enterJump resets jumpElapsed. Keep the takeoff envelope fully elapsed afterwards.
@@ -501,7 +630,7 @@ export class CharacterAnimator {
         if (this.jumpElapsed >= c.recoveryDurationMs) {
           this.state=dest; this.jumpStage=null; this.jumpActive=null; this.recoveryTarget=null;
           this.backflipActive=null;this.interrupted=null;this.backAngle=0;this.applyRoot();this.jumpCancelled=false;
-          return remaining>0 ? this.update(remaining,speed)! : pose;
+          return remaining>0 ? this.updateCore(remaining,speed)! : pose;
         }
         return pose;
       }
@@ -539,7 +668,7 @@ export class CharacterAnimator {
   setFacing(direction: Facing): void {
     if (direction !== 'left' && direction !== 'right') throw new TypeError('Invalid facing');
     this.facing = direction;
-    if (this.lastPose) this.render(this.lastPose); else this.restore();
+    if (this.lastPose) this.render(this.lastPose); else {this.restore();this.renderArms(neutralPose(),'');}
   }
   resetPose(): void {
     this.state = this.requested = 'neutral'; this.transition = null;
@@ -547,16 +676,21 @@ export class CharacterAnimator {
     this.verticalVelocity=0; this.landingProximity=0;
     this.phase = this.config.stanceRatio / 2; this.idlePhase = 0;
     this.backflipActive=null;this.interrupted=null;this.backAngle=0;this.flightProgress=0;this.jumpCancelled=false;
+    this.weaponArmOwner=false;this.weaponDirect=null;this.weaponBodyRecoil=0;this.armOverrides={};this.appliedArms={};this.armWeight=this.armWeightFrom=this.armsConfig.enabled?this.armsConfig.intensity:0;this.armWeightElapsed=this.armsConfig.overrideBlendMs;
     this.lastPose = null; this.restore();
   }
   /** deltaTime in milliseconds; movementSpeed in nonnegative SVG units/sec.
    * A zero-speed WALK request blends to IDLE and resumes WALK when speed returns.
    * Explicit playIdle/stopWalk cancel the WALK request. No internal scheduler. */
   update(deltaTime: number, movementSpeed: number): WalkPose | null {
+    finite(deltaTime,'deltaTime');finite(movementSpeed,'movementSpeed');if(deltaTime<0||movementSpeed<0)throw new RangeError('deltaTime and movementSpeed must be nonnegative');
+    this.advanceArms(deltaTime);return this.updateCore(deltaTime,movementSpeed);
+  }
+  private updateCore(deltaTime: number, movementSpeed: number): WalkPose | null {
     finite(deltaTime, 'deltaTime'); finite(movementSpeed, 'movementSpeed');
     if (deltaTime < 0 || movementSpeed < 0) throw new RangeError('deltaTime and movementSpeed must be nonnegative');
     if (this.isJumping) return this.advanceJump(deltaTime,movementSpeed);
-    if (this.requested === 'neutral') return null;
+    if (this.requested === 'neutral') {this.refreshArmOverrides();return null;}
     this.switchTo(this.requested === 'walk' && movementSpeed > 0 ? 'walk' : 'idle');
     let target: WalkPose;
     if (this.state === 'walk') {
@@ -583,7 +717,7 @@ export class CharacterAnimator {
     const breath = (0.5 - 0.5 * Math.cos(TAU * mod(finite(phase, 'phase')))) * c.intensity;
     const pose = neutralPose();
     pose.body = {y:-c.bodyBob*breath,angle:0,sx:1-c.widthChange*breath,sy:1+c.heightChange*breath};
-    return pose;
+    return this.withArms(pose,n=>({x:0,y:0,angle:Math.sin(TAU*mod(phase))*c.intensity*this.armsConfig.idleSwayDeg*(n==='arm_near'?1:-.7)}));
   }
   /** Pure pose evaluation at any normalized cycle phase; useful for tooling. */
   sample(phase: number): WalkPose {
@@ -591,11 +725,12 @@ export class CharacterAnimator {
     const p = mod(finite(phase, 'phase'));
     const wave = Math.cos(TAU * 2 * (p - c.stanceRatio / 2));
     const sy = 1 + c.squashStretch * wave;
-    return {
+    const pose:WalkPose = {
       foot_near: this.foot('foot_near', p),
       foot_far: this.foot('foot_far', mod(p + c.phaseOffset)),
       body: { y: -c.bodyBob * (0.5 + 0.5 * wave), angle: this.nativeSign * c.bodyTiltDeg * (0.62 + 0.38 * Math.sin(TAU * p)), sx: 1 / sy, sy }
     };
+    return this.withArms(pose,n=>{const f=pose[n==='arm_near'?'foot_near':'foot_far'];const swing=clamp(f.x/c.stepAmplitude,-1,1);return {angle:swing*this.armsConfig.walkSwingDeg,x:-swing*this.armsConfig.walkShift,y:0};});
   }
   private foot(name: Foot, p: number): FootPose {
     const c = this.config, a = c.stepAmplitude, s = c.stanceRatio;
@@ -639,14 +774,36 @@ export class CharacterAnimator {
     if(Math.abs(a%360)<1e-8)this.root.removeAttribute('transform');
     else this.root.setAttribute('transform',`rotate(${fmt(a)} ${fmt(p.x)} ${fmt(p.y)})`);
   }
-  private restore(): void { this.apply('foot_far'); this.apply('body'); this.apply('foot_near'); this.applyRoot(); }
+  private applyArm(n:Arm,bodyAnimation:string,pose:ArmPose):void {
+    const g=this.armGroups[n],p=this.armPivots[n];if(!g||!p)return;
+    const local=pose.x===0&&pose.y===0&&pose.angle===0?'':`translate(${fmt(pose.x)} ${fmt(pose.y)}) rotate(${fmt(pose.angle)} ${fmt(p.x)} ${fmt(p.y)})`;
+    const value=[this.mirror(),bodyAnimation,local,this.armOriginal[n]].filter(Boolean).join(' ');
+    if(value)g.setAttribute('transform',value);else if(this.armOriginal[n]===null)g.removeAttribute('transform');else g.setAttribute('transform',this.armOriginal[n]||'');
+    this.appliedArms[n]=pose;
+  }
+  /** Actual pivot/grip in SVG root user coordinates, including mirror, body and global rotation.
+   * Rig points are in assembled SVG space before the animation (not path-local coordinates). */
+  getArmAnchors(n:Arm): {pivot:Point;grip?:Point}|null {
+    const pivot=this.armPivots[n];if(!pivot)return null;
+    const b=this.visualBody(this.lastPose||neutralPose()), p=this.config.bodyPivot||{x:(this.pivots.foot_far.x+this.pivots.foot_near.x)/2,y:(this.pivots.foot_far.y+this.pivots.foot_near.y)/2};
+    const arm=this.appliedArms[n]||armNeutral();
+    const rot=(v:Point,c:Point,deg:number):Point=>{const a=deg*Math.PI/180,dx=v.x-c.x,dy=v.y-c.y;return {x:c.x+dx*Math.cos(a)-dy*Math.sin(a),y:c.y+dx*Math.sin(a)+dy*Math.cos(a)};};
+    const transform=(v:Point):Point=>{let q=rot(v,pivot,arm.angle);q={x:q.x+arm.x,y:q.y+arm.y};q=rot({x:p.x+(q.x-p.x)*b.sx,y:p.y+(q.y-p.y)*b.sy},p,b.angle);q.y+=b.y;if(this.facing!==this.nativeFacing)q.x=2*this.box[0]+this.box[2]-q.x;return rot(q,this.rotationPivot,this.rotationAngle);};
+    const grip=this.armGrips[n];return {pivot:transform(pivot),...(grip?{grip:transform(grip)}:{})};
+  }
+  private restore(): void { this.apply('foot_far'); this.apply('body'); this.apply('foot_near');for(const n of ARMS)this.applyArm(n,'',armNeutral()); this.applyRoot(); }
+  private renderArms(pose:WalkPose,bodyAnimation:string):void {
+    for(const n of ARMS){if(!this.armGroups[n])continue;let local=mixArm(armNeutral(),pose.arms?.[n]||armNeutral(),this.armWeight);const o=this.armOverrides[n];if(o){if(o.targetWeight===1)local=mixArm(o.from,o.pose,smooth(o.elapsed/this.armsConfig.overrideBlendMs));else local=mixArm(local,o.pose,o.weight);}this.applyArm(n,bodyAnimation,this.weaponDirect?.[n]||local);}
+  }
   private render(pose: WalkPose): WalkPose {
     for (const name of ['foot_far','foot_near'] as const) {
       const f = pose[name], p = this.pivots[name];
       this.apply(name, f.x === 0 && f.y === 0 && f.angle === 0 ? '' : `translate(${fmt(f.x)} ${fmt(f.y)}) rotate(${fmt(f.angle)} ${fmt(p.x)} ${fmt(p.y)})`);
     }
-    const b = pose.body, p = this.config.bodyPivot || {x: (this.pivots.foot_far.x + this.pivots.foot_near.x)/2, y: (this.pivots.foot_far.y + this.pivots.foot_near.y)/2};
-    this.apply('body', b.y === 0 && b.angle === 0 && b.sx === 1 && b.sy === 1 ? '' : `translate(0 ${fmt(b.y)}) translate(${fmt(p.x)} ${fmt(p.y)}) rotate(${fmt(b.angle)}) scale(${fmt(b.sx)} ${fmt(b.sy)}) translate(${fmt(-p.x)} ${fmt(-p.y)})`);
+    const b = this.visualBody(pose), p = this.config.bodyPivot || {x: (this.pivots.foot_far.x + this.pivots.foot_near.x)/2, y: (this.pivots.foot_far.y + this.pivots.foot_near.y)/2};
+    const bodyAnimation = b.y === 0 && b.angle === 0 && b.sx === 1 && b.sy === 1 ? '' : `translate(0 ${fmt(b.y)}) translate(${fmt(p.x)} ${fmt(p.y)}) rotate(${fmt(b.angle)}) scale(${fmt(b.sx)} ${fmt(b.sy)}) translate(${fmt(-p.x)} ${fmt(-p.y)})`;
+    this.apply('body',bodyAnimation);
+    this.renderArms(pose,bodyAnimation);
     this.applyRoot();
     return this.lastPose = pose;
   }

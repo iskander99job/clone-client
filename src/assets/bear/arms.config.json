@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "intensity": 1,
+  "idleSwayDeg": 1.6,
+  "walkSwingDeg": 10,
+  "walkShift": 2.5,
+  "jumpTakeoffDeg": 9,
+  "jumpAirDeg": 6,
+  "jumpLift": 2,
+  "backflipTuckDeg": 12,
+  "backflipLift": 3,
+  "backflipInward": 3,
+  "overrideBlendMs": 125
+}

@@ -15,8 +15,10 @@
     "forward": "left"
   },
   "draw_order": [
+    "arm_far",
     "foot_far",
     "body",
+    "arm_near",
     "foot_near"
   ],
   "source_transform": {
@@ -74,6 +76,52 @@
         -30,
         30
       ],
+      "transform_template": "translate(dx dy) rotate(angle pivotX pivotY)"
+    },
+    "arm_near": {
+      "svg_id": "arm_near",
+      "data_part": "arm_near",
+      "file": "arm_near.svg",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation_deg": 0,
+      "pivot": {
+        "x": 332.9077,
+        "y": 350.5636
+      },
+      "pivotX": 332.9077,
+      "pivotY": 350.5636,
+      "grip": {
+        "x": 273.0574,
+        "y": 395.4514
+      },
+      "gripX": 273.0574,
+      "gripY": 395.4514,
+      "transform_template": "translate(dx dy) rotate(angle pivotX pivotY)"
+    },
+    "arm_far": {
+      "svg_id": "arm_far",
+      "data_part": "arm_far",
+      "file": "arm_far.svg",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation_deg": 0,
+      "pivot": {
+        "x": 64.7781,
+        "y": 342.1845
+      },
+      "pivotX": 64.7781,
+      "pivotY": 342.1845,
+      "grip": {
+        "x": 43.2319,
+        "y": 369.7157
+      },
+      "gripX": 43.2319,
+      "gripY": 369.7157,
       "transform_template": "translate(dx dy) rotate(angle pivotX pivotY)"
     }
   },
@@ -275,6 +323,177 @@
       "overlap_pixels_with_body": {
         "foot_far": 2328,
         "foot_near": 4016
+      }
+    }
+  ],
+  "arms_note": "Arm pivot and grip coordinates are in the same 512 x 512 user space as foot pivots. Grip is a proposed weapon contact point, not a validated weapon attachment. Body and arm geometry are local reconstructions of the formerly occluded regions. Neutral arm transforms are identity. The six tests are static poses, not animation. Existing foot validation and test_poses refer to the prior approved three-part version.",
+  "arms_neutral_validation": {
+    "renderer": "Chromium native SVG DOM",
+    "silhouette_iou": 0.9999821448764723,
+    "mean_premultiplied_rgb_error_0_255": 0.08713574137876641,
+    "pixels_differing_by_more_than_10": 849,
+    "source_sha256": "23ca0670c6c1aeeef494c3aaabc4623ba9689485dd96b8c7aa6739944dbe1e77"
+  },
+  "arms_test_poses": [
+    {
+      "pose": "01  Neutral",
+      "transform": {},
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "internal_holes_over_8px": 0,
+      "overlap_pixels_with_body": {
+        "arm_near": 8354,
+        "arm_far": 1850
+      },
+      "grip_positions": {
+        "arm_near": {
+          "x": 273.057,
+          "y": 395.451
+        },
+        "arm_far": {
+          "x": 43.232,
+          "y": 369.716
+        }
+      }
+    },
+    {
+      "pose": "02  Near arm +30\u00b0",
+      "transform": {
+        "arm_near": {
+          "dx": 0,
+          "dy": 0,
+          "rotation_deg": 30
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "internal_holes_over_8px": 0,
+      "overlap_pixels_with_body": {
+        "arm_near": 8355,
+        "arm_far": 1850
+      },
+      "grip_positions": {
+        "arm_near": {
+          "x": 258.632,
+          "y": 359.512
+        },
+        "arm_far": {
+          "x": 43.232,
+          "y": 369.716
+        }
+      }
+    },
+    {
+      "pose": "03  Near arm +60\u00b0",
+      "transform": {
+        "arm_near": {
+          "dx": 0,
+          "dy": 0,
+          "rotation_deg": 60
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "internal_holes_over_8px": 0,
+      "overlap_pixels_with_body": {
+        "arm_near": 8364,
+        "arm_far": 1850
+      },
+      "grip_positions": {
+        "arm_near": {
+          "x": 264.109,
+          "y": 321.176
+        },
+        "arm_far": {
+          "x": 43.232,
+          "y": 369.716
+        }
+      }
+    },
+    {
+      "pose": "04  Near arm forward",
+      "transform": {
+        "arm_near": {
+          "dx": -48,
+          "dy": -8,
+          "rotation_deg": 15
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "internal_holes_over_8px": 0,
+      "overlap_pixels_with_body": {
+        "arm_near": 8360,
+        "arm_far": 1850
+      },
+      "grip_positions": {
+        "arm_near": {
+          "x": 215.479,
+          "y": 370.431
+        },
+        "arm_far": {
+          "x": 43.232,
+          "y": 369.716
+        }
+      }
+    },
+    {
+      "pose": "05  Far arm revealed",
+      "transform": {
+        "arm_far": {
+          "dx": -12,
+          "dy": -5,
+          "rotation_deg": 12
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "internal_holes_over_8px": 0,
+      "overlap_pixels_with_body": {
+        "arm_near": 8354,
+        "arm_far": 924
+      },
+      "grip_positions": {
+        "arm_near": {
+          "x": 273.057,
+          "y": 395.451
+        },
+        "arm_far": {
+          "x": 25.979,
+          "y": 359.634
+        }
+      }
+    },
+    {
+      "pose": "06  Two-hand hold (no weapon)",
+      "transform": {
+        "arm_far": {
+          "dx": -4,
+          "dy": -15,
+          "rotation_deg": 25
+        },
+        "arm_near": {
+          "dx": -72,
+          "dy": 12,
+          "rotation_deg": 48
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "internal_holes_over_8px": 0,
+      "overlap_pixels_with_body": {
+        "arm_near": 8359,
+        "arm_far": 1650
+      },
+      "grip_positions": {
+        "arm_near": {
+          "x": 187.502,
+          "y": 348.122
+        },
+        "arm_far": {
+          "x": 29.615,
+          "y": 343.03
+        }
       }
     }
   ]

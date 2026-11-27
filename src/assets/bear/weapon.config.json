@@ -1,0 +1,28 @@
+{
+  "weaponId": "bazooka",
+  "scale": 8,
+  "nativeFacing": "right",
+  "pivot": {
+    "x": 20,
+    "y": 10
+  },
+  "offset": {
+    "x": 245,
+    "y": 315
+  },
+  "grip_near": {
+    "x": 21,
+    "y": 7
+  },
+  "grip_far": {
+    "x": 38,
+    "y": 7
+  },
+  "muzzle": {
+    "x": 51,
+    "y": 0
+  },
+  "minAimAngle": -90,
+  "maxAimAngle": 90,
+  "renderOrder": "before:arm_far"
+}
