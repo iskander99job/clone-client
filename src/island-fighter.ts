@@ -13,7 +13,7 @@ import { SVG_NS } from './svg-viewport'
 
 const [, , FRAME] = bearRig.viewBox
 const FEET = walkConfig.groundY
-const WALK_SPEED = 155
+const WALK_SPEED = 80
 
 export async function addIslandFighter(
   scene: Phaser.Scene,
@@ -188,7 +188,7 @@ export async function addIslandFighter(
       const elevation = Number(held('ArrowUp')) - Number(held('ArrowDown'))
       angle = Math.max(-90, Math.min(90, angle + elevation * 70 * STEP))
     }
-    if (!flight) duel.movePlayer(animator.isJumping ? 0 : move)
+    if (!flight) duel.movePlayer(animator.isJumping ? 0 : move, WALK_SPEED)
 
     if (animator.isReadyForTakeoff) {
       if (duel.jumpPlayer(pendingJump)) {

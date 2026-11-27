@@ -218,14 +218,14 @@ export class Duel {
     return this.playerGroundContact(4) !== null
   }
 
-  movePlayer(direction: number) {
+  movePlayer(direction: number, walkSpeed = 155) {
     if (!direction && !this.movingPlayer) return
     const player = this.fighters[0]
     if (direction) player.direction = direction
     const ground = this.playerGroundContact(10)
     if (!ground) return
     this.movingPlayer = direction !== 0
-    const speed = direction * 155
+    const speed = direction * walkSpeed
     const normal = ground.normal1
     if (direction && normal.y < -0.55) {
       // Walk tangentially so friction cannot pin horizontal input against the slope.
