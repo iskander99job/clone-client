@@ -1,0 +1,32 @@
+{
+  "anticipationDurationMs": 120,
+  "anticipationSquash": 0.15,
+  "anticipationWiden": 0.08,
+  "anticipationDrop": 2,
+  "anticipationIntensity": 1,
+  "takeoffDurationMs": 70,
+  "takeoffStretch": 0.08,
+  "takeoffNarrow": 0.04,
+  "tuckLift": 19,
+  "tuckRotationDeg": 20,
+  "tuckIntensity": 1,
+  "tuckSquash": 0.035,
+  "tuckWiden": 0.025,
+  "rotationAngleDeg": 360,
+  "rotationSpeed": 1,
+  "rotationStart": 0.08,
+  "rotationEnd": 0.9,
+  "tuckEnd": 0.24,
+  "untuckStart": 0.76,
+  "landingDurationMs": 150,
+  "landingSquash": 0.12,
+  "landingWiden": 0.06,
+  "landingDrop": 3,
+  "landingIntensity": 1,
+  "recoveryDurationMs": 125,
+  "interruptDurationMs": 150,
+  "rotationPivot": {
+    "x": 256,
+    "y": 260
+  }
+}

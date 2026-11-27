@@ -1,0 +1,21 @@
+{
+  "anticipationDurationMs": 100,
+  "anticipationSquash": 0.12,
+  "anticipationWiden": 0.06,
+  "anticipationDrop": 2,
+  "anticipationIntensity": 1,
+  "takeoffDurationMs": 70,
+  "takeoffStretch": 0.08,
+  "takeoffNarrow": 0.04,
+  "airborneBlendMs": 85,
+  "airborneFootLift": 14,
+  "airborneFootRotationDeg": 15,
+  "footTuckIntensity": 1,
+  "bodyTiltDeg": 5,
+  "landingDurationMs": 135,
+  "landingSquash": 0.1,
+  "landingWiden": 0.05,
+  "landingDrop": 3,
+  "landingIntensity": 1,
+  "recoveryDurationMs": 125
+}

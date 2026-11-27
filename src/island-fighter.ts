@@ -1,12 +1,19 @@
 import type Phaser from 'phaser'
 import type { Point } from './duel'
 import type { ArenaMap } from './maps'
-import boarSvg from './assets/boar.svg?raw'
+import bearSvg from './assets/bear/bear.svg?raw'
+import bearRig from './assets/bear/rig.json'
+import walkConfig from './assets/bear/walk.config.json'
+import idleConfig from './assets/bear/idle.config.json'
+import jumpConfig from './assets/bear/jump.config.json'
+import backflipConfig from './assets/bear/backflip.config.json'
+import { CharacterAnimator } from './character-animator'
 import bazookaSvg from './assets/bazooka.svg?raw'
 import { SVG_NS } from './svg-viewport'
 
-const FRAME = 256
-const FEET = 232
+const [, , FRAME] = bearRig.viewBox
+const FEET = walkConfig.groundY
+const WALK_SPEED = 155
 
 export async function addIslandFighter(
   scene: Phaser.Scene,
@@ -37,22 +44,22 @@ export async function addIslandFighter(
   duel.fighters[1].body.setEnabled(false)
   const spawn = body.translation()
   const sprite = actors.appendChild(document.createElementNS(SVG_NS, 'g'))
-  sprite.classList.add('boar')
-  sprite.innerHTML = boarSvg
+  sprite.classList.add('bear')
+  sprite.innerHTML = bearSvg.replace(/^<\?xml[^?]*\?>/, '')
   const bodyArt = sprite.querySelector('svg')!
   bodyArt.setAttribute('x', String(-FRAME / 2))
   bodyArt.setAttribute('y', String(-FEET))
-  const baseScale = map.fighterSize / FRAME
+  const animator = new CharacterAnimator(bodyArt, bearRig, walkConfig, idleConfig, jumpConfig, backflipConfig)
+  animator.setFacing(fighter.direction < 0 ? 'left' : 'right')
+  animator.playIdle()
+  const baseScale = map.fighterSize / FRAME * 0.8
   sprite.setAttribute('transform', `translate(${spawn.x} ${spawn.y + RADIUS}) scale(${baseScale})`)
   const input = new AbortController()
   const { signal } = input
   const pressed = new Map<number, string>()
   const heldKeys = new Set<string>()
   let pendingJump = 0
-  let crouch = 0
-  let landing = 0
-  let airborne = false
-  let walkTime = 0
+  let flight: { elapsed: number; duration: number } | undefined
   let accumulator = 0
 
   function button(selector: string) {
@@ -147,9 +154,10 @@ export async function addIslandFighter(
   }
 
   function requestJump(direction: number) {
-    if (crouch || airborne || landing || !duel.playerGrounded()) return
+    if (animator.isJumping || !duel.playerGrounded()) return
     pendingJump = direction
-    crouch = 0.09
+    if (direction < 0) animator.playBackflip()
+    else animator.playJump()
   }
 
   button('.jump-forward').addEventListener('click', () => requestJump(1), { signal })
@@ -180,11 +188,15 @@ export async function addIslandFighter(
       const elevation = Number(held('ArrowUp')) - Number(held('ArrowDown'))
       angle = Math.max(-90, Math.min(90, angle + elevation * 70 * STEP))
     }
-    if (!airborne) duel.movePlayer(crouch || landing ? 0 : move)
+    if (!flight) duel.movePlayer(animator.isJumping ? 0 : move)
 
-    if (crouch > 0) {
-      crouch = Math.max(0, crouch - STEP)
-      if (crouch === 0) airborne = duel.jumpPlayer(pendingJump)
+    if (animator.isReadyForTakeoff) {
+      if (duel.jumpPlayer(pendingJump)) {
+        flight = { elapsed: 0, duration: -2 * body.linvel().y / duel.world.gravity.y }
+        animator.notifyTakeoff()
+      } else {
+        animator.cancelJump()
+      }
     }
 
     duel.stepPhysics()
@@ -200,36 +212,33 @@ export async function addIslandFighter(
     if (position.y >= waterY || position.x < 0 || position.x > width) {
       body.setTranslation(spawn, true)
       body.setLinvel({ x: 0, y: 0 }, true)
-      airborne = false
-      crouch = 0
-      landing = 0
+      flight = undefined
+      animator.resetPose()
     }
 
     const velocity = body.linvel()
     const grounded = duel.playerGrounded()
-    if (airborne && grounded && velocity.y >= -10) {
-      airborne = false
-      landing = 0.11
-    } else {
-      landing = Math.max(0, landing - STEP)
+    if (flight) {
+      flight.elapsed += STEP
+      const progress = Math.min(1, flight.elapsed / flight.duration)
+      animator.notifyAirborne(velocity.y, Math.max(0, (progress - 0.75) * 4), progress)
+      if (grounded && velocity.y >= -10) {
+        animator.notifyLanding()
+        flight = undefined
+      }
     }
 
     const feet = body.translation()
-    const facing = duel.fighters[0].direction
-    const walking = !crouch && !landing && !airborne && grounded && move && Math.abs(velocity.x) > 10
-    walkTime = walking ? walkTime + STEP : 0
-    const stride = Math.sin(walkTime * Math.PI * 16)
-
-    let stretch = 0
-    if (crouch) stretch = -0.15 * (1 - crouch / 0.09)
-    else if (airborne || !grounded) stretch = Math.min(0.12, Math.abs(velocity.y) / 1600)
-    else if (landing) stretch = -0.16 * (landing / 0.11)
-    else if (walking) stretch = stride * 0.035
-
-    const rotation = walking ? stride * facing * 2.5 : 0
-    const scaleX = facing * baseScale * (1 - stretch * 0.55)
-    const scaleY = baseScale * (1 + stretch)
-    sprite.setAttribute('transform', `translate(${feet.x} ${feet.y + RADIUS}) rotate(${rotation}) scale(${scaleX} ${scaleY})`)
+    const facing = fighter.direction
+    const direction = facing < 0 ? 'left' : 'right'
+    if (animator.direction !== direction) animator.setFacing(direction)
+    const walking = grounded && move !== 0 && Math.abs(velocity.x) > 10
+    if (walking) animator.playWalk()
+    else animator.playIdle()
+    // Keep the supplied stride cadence at the game's normal movement speed.
+    const strideSpeed = walking ? animator.referenceSpeed * Math.abs(velocity.x) / WALK_SPEED : 0
+    animator.update(STEP * 1000, strideSpeed)
+    sprite.setAttribute('transform', `translate(${feet.x} ${feet.y + RADIUS}) scale(${baseScale})`)
 
     if (equipped) {
       const origin = grip()

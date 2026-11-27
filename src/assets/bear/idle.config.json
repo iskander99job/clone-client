@@ -1,0 +1,8 @@
+{
+  "cycleDurationMs": 2000,
+  "heightChange": 0.02,
+  "widthChange": 0.01,
+  "bodyBob": 2,
+  "intensity": 1,
+  "transitionDurationMs": 125
+}

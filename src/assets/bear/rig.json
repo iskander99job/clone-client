@@ -1,0 +1,281 @@
+{
+  "schema_version": 1,
+  "viewBox": [
+    0,
+    0,
+    512,
+    512
+  ],
+  "coordinate_system": {
+    "units": "SVG user units",
+    "origin": "top-left",
+    "x_positive": "right",
+    "y_positive": "down",
+    "rotation_positive": "clockwise",
+    "forward": "left"
+  },
+  "draw_order": [
+    "foot_far",
+    "body",
+    "foot_near"
+  ],
+  "source_transform": {
+    "translate": [
+      18.094763,
+      10.613466
+    ],
+    "scale": 0.59850374,
+    "svg": "translate(18.094763 10.613466) scale(0.59850374)"
+  },
+  "parts": {
+    "foot_far": {
+      "svg_id": "foot_far",
+      "data_part": "foot_far",
+      "file": "foot_far.svg",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation_deg": 0,
+      "pivot": {
+        "x": 149.1671,
+        "y": 456.4988
+      },
+      "rotation_test_deg": [
+        -30,
+        30
+      ],
+      "transform_template": "translate(dx dy) rotate(angle pivotX pivotY)"
+    },
+    "body": {
+      "svg_id": "body",
+      "data_part": "body",
+      "file": "body.svg",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation_deg": 0
+    },
+    "foot_near": {
+      "svg_id": "foot_near",
+      "data_part": "foot_near",
+      "file": "foot_near.svg",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation_deg": 0,
+      "pivot": {
+        "x": 305.9751,
+        "y": 436.7481
+      },
+      "rotation_test_deg": [
+        -30,
+        30
+      ],
+      "transform_template": "translate(dx dy) rotate(angle pivotX pivotY)"
+    }
+  },
+  "placement": "Each standalone SVG uses the full 512x512 viewport and original placement. Overlay at (0,0) in draw_order. Do not apply source_transform a second time.",
+  "viewport_note": "Root overflow is visible for inline SVG. A fixed-size raster viewport still clips outside its bounds. The tested combinations are listed; arbitrary independent maxima are not guaranteed safe.",
+  "neutral_validation": {
+    "renderer": "Chromium native SVG DOM",
+    "silhouette_iou": 0.9999523877541303,
+    "mean_premultiplied_rgb_error_0_255": 0.045903339672297046,
+    "pixels_differing_by_more_than_10": 260
+  },
+  "test_poses": [
+    {
+      "pose": "01  Neutral",
+      "transform": {},
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "overlap_pixels_with_body": {
+        "foot_far": 2064,
+        "foot_near": 3364
+      }
+    },
+    {
+      "pose": "02  Near forward",
+      "transform": {
+        "foot_near": {
+          "dx": -16,
+          "dy": -3,
+          "rotation_deg": -8
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "overlap_pixels_with_body": {
+        "foot_far": 2064,
+        "foot_near": 3837
+      }
+    },
+    {
+      "pose": "03  Far forward",
+      "transform": {
+        "foot_far": {
+          "dx": -13,
+          "dy": -3,
+          "rotation_deg": -8
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "overlap_pixels_with_body": {
+        "foot_far": 2001,
+        "foot_near": 3364
+      }
+    },
+    {
+      "pose": "04  Near lifted",
+      "transform": {
+        "foot_near": {
+          "dx": -5,
+          "dy": -13,
+          "rotation_deg": 14
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "overlap_pixels_with_body": {
+        "foot_far": 2064,
+        "foot_near": 4594
+      }
+    },
+    {
+      "pose": "05  Far lifted",
+      "transform": {
+        "foot_far": {
+          "dx": -5,
+          "dy": -11,
+          "rotation_deg": 12
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "overlap_pixels_with_body": {
+        "foot_far": 2659,
+        "foot_near": 3364
+      }
+    },
+    {
+      "pose": "06  Near -30 deg",
+      "transform": {
+        "foot_near": {
+          "dx": 0,
+          "dy": 0,
+          "rotation_deg": -30
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "overlap_pixels_with_body": {
+        "foot_far": 2064,
+        "foot_near": 3728
+      }
+    },
+    {
+      "pose": "07  Near +30 deg",
+      "transform": {
+        "foot_near": {
+          "dx": 0,
+          "dy": 0,
+          "rotation_deg": 30
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "overlap_pixels_with_body": {
+        "foot_far": 2064,
+        "foot_near": 3662
+      }
+    },
+    {
+      "pose": "08  Far -30 deg",
+      "transform": {
+        "foot_far": {
+          "dx": 0,
+          "dy": 0,
+          "rotation_deg": -30
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "overlap_pixels_with_body": {
+        "foot_far": 2340,
+        "foot_near": 3364
+      }
+    },
+    {
+      "pose": "09  Far +30 deg",
+      "transform": {
+        "foot_far": {
+          "dx": 0,
+          "dy": 0,
+          "rotation_deg": 30
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "overlap_pixels_with_body": {
+        "foot_far": 1950,
+        "foot_near": 3364
+      }
+    },
+    {
+      "pose": "10  Near offset",
+      "transform": {
+        "foot_near": {
+          "dx": 12,
+          "dy": 5,
+          "rotation_deg": 0
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "overlap_pixels_with_body": {
+        "foot_far": 2064,
+        "foot_near": 2713
+      }
+    },
+    {
+      "pose": "11  Far offset",
+      "transform": {
+        "foot_far": {
+          "dx": 12,
+          "dy": 5,
+          "rotation_deg": 0
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "overlap_pixels_with_body": {
+        "foot_far": 1959,
+        "foot_near": 3364
+      }
+    },
+    {
+      "pose": "12  Both feet",
+      "transform": {
+        "foot_far": {
+          "dx": -10,
+          "dy": -5,
+          "rotation_deg": -20
+        },
+        "foot_near": {
+          "dx": 10,
+          "dy": -6,
+          "rotation_deg": 20
+        }
+      },
+      "pixels_outside_viewbox": 0,
+      "connected_components_over_8px": 1,
+      "overlap_pixels_with_body": {
+        "foot_far": 2328,
+        "foot_near": 4016
+      }
+    }
+  ]
+}
