@@ -1,7 +1,7 @@
 import type Phaser from 'phaser'
 import type { Point } from './duel'
 import type { ArenaMap } from './maps'
-import pandaSvg from './assets/panda.svg?raw'
+import boarSvg from './assets/boar.svg?raw'
 import bazookaSvg from './assets/bazooka.svg?raw'
 import { SVG_NS } from './svg-viewport'
 
@@ -37,13 +37,13 @@ export async function addIslandFighter(
   duel.fighters[1].body.setEnabled(false)
   const spawn = body.translation()
   const sprite = actors.appendChild(document.createElementNS(SVG_NS, 'g'))
-  sprite.classList.add('panda')
-  sprite.innerHTML = pandaSvg
+  sprite.classList.add('boar')
+  sprite.innerHTML = boarSvg
   const bodyArt = sprite.querySelector('svg')!
   bodyArt.setAttribute('x', String(-FRAME / 2))
   bodyArt.setAttribute('y', String(-FEET))
   const baseScale = map.fighterSize / FRAME
-  sprite.setAttribute('transform', `translate(${spawn.x} ${spawn.y + RADIUS}) scale(${-baseScale} ${baseScale})`)
+  sprite.setAttribute('transform', `translate(${spawn.x} ${spawn.y + RADIUS}) scale(${baseScale})`)
   const input = new AbortController()
   const { signal } = input
   const pressed = new Map<number, string>()
@@ -227,7 +227,7 @@ export async function addIslandFighter(
     else if (walking) stretch = stride * 0.035
 
     const rotation = walking ? stride * facing * 2.5 : 0
-    const scaleX = -facing * baseScale * (1 - stretch * 0.55)
+    const scaleX = facing * baseScale * (1 - stretch * 0.55)
     const scaleY = baseScale * (1 + stretch)
     sprite.setAttribute('transform', `translate(${feet.x} ${feet.y + RADIUS}) rotate(${rotation}) scale(${scaleX} ${scaleY})`)
 
