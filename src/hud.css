@@ -67,7 +67,7 @@
 }
 
 .avatar-player {
-  background: #182f406b url('./assets/boar.svg') center / 100% no-repeat;
+  background: #182f406b url('./assets/panda.svg') center / 100% no-repeat;
 }
 
 .fighter-stats { flex: 1; min-width: 0; }

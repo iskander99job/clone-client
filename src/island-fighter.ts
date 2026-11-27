@@ -1,7 +1,7 @@
 import type Phaser from 'phaser'
 import type { Point } from './duel'
 import type { ArenaMap } from './maps'
-import boarSvg from './assets/boar.svg?raw'
+import pandaSvg from './assets/panda.svg?raw'
 import bazookaSvg from './assets/bazooka.svg?raw'
 import { SVG_NS } from './svg-viewport'
 
@@ -37,8 +37,8 @@ export async function addIslandFighter(
   duel.fighters[1].body.setEnabled(false)
   const spawn = body.translation()
   const sprite = actors.appendChild(document.createElementNS(SVG_NS, 'g'))
-  sprite.classList.add('boar')
-  sprite.innerHTML = boarSvg
+  sprite.classList.add('panda')
+  sprite.innerHTML = pandaSvg
   const bodyArt = sprite.querySelector('svg')!
   bodyArt.setAttribute('x', String(-FRAME / 2))
   bodyArt.setAttribute('y', String(-FEET))
