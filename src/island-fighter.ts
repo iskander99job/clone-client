@@ -43,7 +43,7 @@ export async function addIslandFighter(
   bodyArt.setAttribute('x', String(-FRAME / 2))
   bodyArt.setAttribute('y', String(-FEET))
   const baseScale = map.fighterSize / FRAME
-  sprite.setAttribute('transform', `translate(${spawn.x} ${spawn.y + RADIUS}) scale(${baseScale})`)
+  sprite.setAttribute('transform', `translate(${spawn.x} ${spawn.y + RADIUS}) scale(${-baseScale} ${baseScale})`)
   const input = new AbortController()
   const { signal } = input
   const pressed = new Map<number, string>()
@@ -227,7 +227,7 @@ export async function addIslandFighter(
     else if (walking) stretch = stride * 0.035
 
     const rotation = walking ? stride * facing * 2.5 : 0
-    const scaleX = facing * baseScale * (1 - stretch * 0.55)
+    const scaleX = -facing * baseScale * (1 - stretch * 0.55)
     const scaleY = baseScale * (1 + stretch)
     sprite.setAttribute('transform', `translate(${feet.x} ${feet.y + RADIUS}) rotate(${rotation}) scale(${scaleX} ${scaleY})`)
 
