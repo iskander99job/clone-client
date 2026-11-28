@@ -118,7 +118,8 @@ body { margin: 0 }
   position: relative;
   display: block;
 }
-.world-svg {
+.world-svg,
+.map-background {
   position: absolute;
   inset: 0;
   width: 100%;

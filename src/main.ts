@@ -3,7 +3,8 @@ import { FLAT_TEST, FRUIT_ARENA, FRUIT_FOREGROUND, HOUSE_OF_CARDS, STONE_QUARRY 
 import { addIslandFighter } from './island-fighter'
 import { bindMapView } from './map-view'
 import { createRasterTerrain, createVectorTerrain } from './terrain-view'
-import { createSvgViewport, SVG_NS } from './svg-viewport'
+import { createSvgViewport } from './svg-viewport'
+import { mountSvgBackground } from './background-renderer'
 import './style.css'
 import './hud.css'
 
@@ -86,19 +87,12 @@ class Arena extends Phaser.Scene {
     const vector = map.vectorArt === undefined ? undefined : createVectorTerrain(this, field, map.vectorArt, width, height)
     if (!vector && !this.textures.exists('terrain-art')) return
     const terrain = vector ?? createRasterTerrain(this, width, height)
-    let background: ReturnType<typeof createSvgViewport> | undefined
-    if (map.background) {
-      background = createSvgViewport(this, 'map-background')
-      const image = background.svg.appendChild(document.createElementNS(SVG_NS, 'image'))
-      image.setAttribute('href', map.background)
-      image.setAttribute('width', String(width))
-      image.setAttribute('height', String(height))
-      field.before(background.svg)
+    if (map.backgroundSvg) {
+      this.events.once('shutdown', mountSvgBackground(field, map.backgroundSvg))
     }
     const actors = createSvgViewport(this, 'vector-actors')
     field.append(actors.svg)
     bindMapView(arena, this, width, height, waterY, (left, top, visibleWidth, visibleHeight) => {
-      background?.updateView(left, top, visibleWidth, visibleHeight)
       vector?.updateView(left, top, visibleWidth, visibleHeight)
       actors.updateView(left, top, visibleWidth, visibleHeight)
     })

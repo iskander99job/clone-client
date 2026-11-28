@@ -1,7 +1,7 @@
 import RAPIER from '@dimforge/rapier2d-compat'
 import { contours } from 'd3-contour'
 import { simplifyRing } from './terrain-contour'
-import type { TerrainMap } from './fruit-island.ts'
+import type { SpawnPoint, TerrainMap } from './map-config'
 
 export { FRUIT_ISLAND } from './fruit-island.ts'
 
@@ -9,6 +9,8 @@ export const WIDTH = 640
 export const HEIGHT = 510
 export const CELL = 2
 export const RADIUS = 31
+const SPAWN_CLEARANCE = 4
+const SPAWN_SURFACE_TOLERANCE = 8
 export const initPhysics = () => RAPIER.init()
 const GRAVITY = 370
 export const BLAST = 67
@@ -56,6 +58,8 @@ export class Duel {
   private readonly columns: number
   private readonly rows: number
   private readonly waterY?: number
+  private readonly spawnPoints: readonly SpawnPoint[]
+  private readonly fighterShape = new RAPIER.Ball(RADIUS)
   private readonly shotSpeed: number
   private readonly contourTolerance: number
   rings: number[][][] = []
@@ -69,6 +73,7 @@ export class Duel {
   rocketShape = new RAPIER.Ball(5)
   private playerGroundProbe = new RAPIER.Ball(RADIUS - 1)
   rocket?: RAPIER.RigidBody
+  private launchingFrom?: RAPIER.RigidBody
   trail: Point[] = []
   blast?: Point
   blastAge = 0
@@ -103,7 +108,20 @@ export class Duel {
       }
     }
     this.rebuildTerrain()
-    this.fighters = [this.createFighter(map?.spawn[0] ?? 83, 1), this.createFighter(map?.spawn[1] ?? 556, -1)]
+    const legacySpawn = map?.spawn ?? [83, 556]
+    this.spawnPoints = map?.spawnPoints ?? legacySpawn.map((x, index) => ({
+      id: `legacy-${index + 1}`,
+      x,
+      y: this.legacyGroundY(x),
+    }))
+    if (map?.spawnPoints) {
+      const player = this.findSpawn(0, [])
+      const opponent = this.findSpawn(1, player ? [player] : [])
+      if (!player || !opponent) throw new Error('Карта не содержит двух безопасных точек появления')
+      this.fighters = [this.createFighter(player, 1), this.createFighter(opponent, -1)]
+    } else {
+      this.fighters = [this.createLegacyFighter(legacySpawn[0], 1), this.createLegacyFighter(legacySpawn[1], -1)]
+    }
     for (let i = 0; i < 35; i++) this.world.step()
   }
 
@@ -144,18 +162,74 @@ export class Duel {
     }
   }
 
-  createFighter(x: number, direction: number): Fighter {
-    const { columns } = this
+  private legacyGroundY(x: number) {
+    if (this.online) return groundHeight(x)
     const column = Math.floor(x / CELL)
-    const surface = this.mask.findIndex((solid, index) => solid === 1 && index % columns === column)
-    const groundY = this.online ? groundHeight(x)
-      : surface < 0 ? this.height : Math.floor(surface / columns) * CELL
+    const surface = this.mask.findIndex((solid, index) => solid === 1 && index % this.columns === column)
+    return surface < 0 ? this.height : Math.floor(surface / this.columns) * CELL
+  }
+
+  private createLegacyFighter(x: number, direction: number) {
+    return this.createFighter({ x, y: this.legacyGroundY(x) - RADIUS - SPAWN_CLEARANCE }, direction)
+  }
+
+  private createFighter(position: Point, direction: number): Fighter {
     const body = this.world.createRigidBody(
-      RAPIER.RigidBodyDesc.dynamic().setTranslation(x, groundY - RADIUS - 4)
+      RAPIER.RigidBodyDesc.dynamic().setTranslation(position.x, position.y)
         .lockRotations().setLinearDamping(0.18).setCcdEnabled(true),
     )
     this.world.createCollider(RAPIER.ColliderDesc.ball(RADIUS).setFriction(1.5), body)
     return { body, hp: 100, direction }
+  }
+
+  private spawnSupport(x: number, y: number) {
+    const top = y - SPAWN_SURFACE_TOLERANCE
+    if (this.solid(x, top - CELL)) return undefined
+    const ray = new RAPIER.Ray({ x, y: top }, { x: 0, y: 1 })
+    let hit = Infinity
+    // Read the current colliders directly, including terrain rebuilt this physics tick.
+    for (const collider of this.terrain) {
+      const distance = collider.castRay(ray, SPAWN_SURFACE_TOLERANCE * 2, false)
+      if (distance >= 0) hit = Math.min(hit, distance)
+    }
+    const surface = top + hit
+    return Number.isFinite(surface) && (this.solid(x, surface + CELL) || this.solid(x, surface + 2 * CELL))
+      ? surface : undefined
+  }
+
+  private findSpawn(preferred: number, occupied: readonly Point[]) {
+    const water = this.waterY ?? this.height
+    for (let offset = 0; offset < this.spawnPoints.length; offset++) {
+      const { x, y } = this.spawnPoints[(preferred + offset) % this.spawnPoints.length]
+      if (!Number.isFinite(x) || !Number.isFinite(y) || x < RADIUS || x > this.width - RADIUS
+        || y < RADIUS * 2 + SPAWN_CLEARANCE || y > water - RADIUS) continue
+      const surface = this.spawnSupport(x, y)
+      if (surface === undefined || surface > water - RADIUS
+        || this.spawnSupport(x - RADIUS / 2, y) === undefined
+        || this.spawnSupport(x + RADIUS / 2, y) === undefined) continue
+
+      const position = { x, y: surface - RADIUS - SPAWN_CLEARANCE }
+      if (occupied.some(other => distance(other, position) < 2 * RADIUS + SPAWN_CLEARANCE)
+        || this.solid(position.x, position.y)
+        || this.terrain.some(collider => collider.intersectsShape(this.fighterShape, position, 0))) continue
+      return position
+    }
+    return undefined
+  }
+
+  respawnFighter(index: number) {
+    const { body } = this.fighters[index]
+    const occupied = this.fighters.filter(fighter => fighter.body !== body && fighter.body.isEnabled())
+      .map(fighter => fighter.body.translation())
+    const position = this.findSpawn(index, occupied)
+    if (!position) {
+      body.setEnabled(false)
+      return false
+    }
+    body.setEnabled(true)
+    body.setTranslation(position, true)
+    body.setLinvel({ x: 0, y: 0 }, true)
+    return true
   }
 
   rebuildTerrain() {
@@ -196,11 +270,12 @@ export class Duel {
       this.explode(origin)
       return
     }
+    this.launchingFrom = fighter.body
     this.rocket = this.world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic().setTranslation(origin.x, origin.y)
         .setLinvel(direction.x * speed, direction.y * speed).setCcdEnabled(true),
     )
-    this.world.createCollider(RAPIER.ColliderDesc.ball(5).setSensor(true), this.rocket)
+    this.world.createCollider(RAPIER.ColliderDesc.ball(this.rocketShape.radius).setSensor(true), this.rocket)
     this.rocket.addForce({ x: this.rocket.mass() * this.wind, y: 0 }, true)
   }
 
@@ -279,9 +354,16 @@ export class Duel {
     if (previous && this.rocket) {
       const current = this.rocket.translation()
       const travel = { x: current.x - previous.x, y: current.y - previous.y }
+      // An animated muzzle can start inside the shooter's physical circle.
+      const shooter = this.launchingFrom
+      if (shooter && distance(previous, shooter.translation()) > RADIUS + this.rocketShape.radius) {
+        this.launchingFrom = undefined
+      }
+      const launchingHandle = this.launchingFrom?.handle
       const hit = this.world.castShape(
         previous, 0, travel, this.rocketShape, 0, 1, true,
         undefined, undefined, undefined, this.rocket,
+        launchingHandle === undefined ? undefined : collider => collider.parent()?.handle !== launchingHandle,
       )
       if (hit) {
         this.explode({
@@ -327,6 +409,7 @@ export class Duel {
   finishFlight() {
     if (this.rocket) this.world.removeRigidBody(this.rocket)
     this.rocket = undefined
+    this.launchingFrom = undefined
     this.trail = []
     this.phase = 'settle'
     this.elapsed = 0

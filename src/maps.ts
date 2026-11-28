@@ -1,4 +1,4 @@
-import cardsBackgroundUrl from './assets/house-of-cards/background.svg'
+import cardsBackgroundSvg from './assets/house-of-cards/background.svg?raw'
 import cardsTerrainUrl from './assets/house-of-cards/terrain.svg'
 import cardsTerrainSvg from './assets/house-of-cards/terrain.svg?raw'
 import flatUrl from './assets/flat-test.png'
@@ -8,13 +8,14 @@ import fruitUrl from './assets/fruit-island.png'
 import fruit2xUrl from './assets/fruit-island-2x.webp'
 import quarryUrl from './assets/stone-quarry.webp'
 import quarryMaskUrl from './assets/stone-quarry-mask.png'
-import { FRUIT_ISLAND, type TerrainMap } from './fruit-island'
+import { FRUIT_ISLAND } from './fruit-island'
+import { mapLayout, type SpawnConfiguration, type TerrainMap } from './map-config'
 
-export type ArenaMap = TerrainMap & {
+export type ArenaMap = TerrainMap & SpawnConfiguration & {
   title: string
   mask: string
   fighterSize: number
-  background?: string
+  backgroundSvg?: string
 } & (
   | { vectorArt: string; art?: never; largeArt?: never }
   | { vectorArt?: never; art: string; largeArt?: { url: string; width: number } }
@@ -22,10 +23,7 @@ export type ArenaMap = TerrainMap & {
 
 export const FLAT_TEST: ArenaMap = {
   title: 'Тестовая площадка',
-  width: 2160,
-  height: 900,
-  waterY: 760,
-  spawn: [1080, 1735],
+  ...mapLayout('flat'),
   shotSpeed: 2.2,
   contourTolerance: 1.25,
   art: flatUrl,
@@ -35,10 +33,7 @@ export const FLAT_TEST: ArenaMap = {
 
 export const FRUIT_FOREGROUND: ArenaMap = {
   title: 'Фруктовая карта',
-  width: FLAT_TEST.width,
-  height: FLAT_TEST.height,
-  waterY: FLAT_TEST.waterY,
-  spawn: [875, 1735],
+  ...mapLayout('fruit-foreground'),
   shotSpeed: FLAT_TEST.shotSpeed,
   contourTolerance: FLAT_TEST.contourTolerance,
   vectorArt: fruitForegroundSvg,
@@ -48,10 +43,7 @@ export const FRUIT_FOREGROUND: ArenaMap = {
 
 export const STONE_QUARRY: ArenaMap = {
   title: 'Каменный карьер',
-  width: 2160,
-  height: 900,
-  waterY: 760,
-  spawn: [425, 1735],
+  ...mapLayout('quarry'),
   shotSpeed: 2.2,
   contourTolerance: 1.25,
   art: quarryUrl,
@@ -70,13 +62,10 @@ export const FRUIT_ARENA: ArenaMap = {
 
 export const HOUSE_OF_CARDS: ArenaMap = {
   title: 'Карточный домик',
-  width: 2160,
-  height: 1080,
-  waterY: 1000,
-  spawn: [770, 1410],
+  ...mapLayout('house-of-cards'),
   shotSpeed: FLAT_TEST.shotSpeed,
   contourTolerance: FLAT_TEST.contourTolerance,
-  background: cardsBackgroundUrl,
+  backgroundSvg: cardsBackgroundSvg,
   vectorArt: cardsTerrainSvg,
   mask: cardsTerrainUrl,
   fighterSize: FLAT_TEST.fighterSize,
