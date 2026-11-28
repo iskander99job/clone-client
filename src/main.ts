@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import cardsTerrainTexture from './assets/house-of-cards/terrain-test.png'
 import { FLAT_TEST, FRUIT_ARENA, FRUIT_FOREGROUND, HOUSE_OF_CARDS, STONE_QUARRY } from './maps'
 import { addIslandFighter } from './island-fighter'
 import { bindMapView } from './map-view'
@@ -12,7 +13,6 @@ import './hud.css'
 // Keep the island's world dimensions independent of the texture resolution.
 const query = new URLSearchParams(location.search)
 const requestedMap = query.get('map')
-const cameraOnly = query.get('player') === 'off'
 const centerOnly = query.get('terrain') === 'off'
 const mapId = requestedMap === 'fruit' || requestedMap === 'quarry' || requestedMap === 'flat'
   || requestedMap === 'fruit-foreground' ? requestedMap : 'house-of-cards'
@@ -23,6 +23,8 @@ const map = {
   'fruit-foreground': FRUIT_FOREGROUND,
   'house-of-cards': HOUSE_OF_CARDS,
 }[mapId]
+const textureTest = mapId === 'house-of-cards' && query.get('terrain') === 'texture'
+const cameraOnly = query.get('player') === 'off' || textureTest
 const { width, height, waterY } = map
 const arena = document.querySelector<HTMLElement>('.arena')!
 const field = document.querySelector<HTMLElement>('#field')!
@@ -78,7 +80,9 @@ for (let index = 0; index < bubbleCount; index++) {
 
 class Arena extends Phaser.Scene {
   preload() {
-    if (!centerOnly && map.art !== undefined) {
+    if (textureTest) {
+      this.load.image('terrain-art', cardsTerrainTexture)
+    } else if (!centerOnly && map.art !== undefined) {
       const renderer = this.game.renderer
       const largeArt = map.largeArt
       const supportsLargeTexture = largeArt && (!(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)
@@ -125,7 +129,7 @@ class Arena extends Phaser.Scene {
     }
     const { placement, physics } = await loadTerrainPlacement(map, !cameraOnly)
     if (!this.sys.isActive()) return
-    const vector = map.vectorArt === undefined ? undefined
+    const vector = textureTest || map.vectorArt === undefined ? undefined
       : createVectorTerrain(this, field, map.vectorArt, width, height, placement)
     if (!vector && !this.textures.exists('terrain-art')) return
     const terrain = vector ?? createRasterTerrain(this, width, height, placement)
