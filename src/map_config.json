@@ -120,7 +120,7 @@
     "height": 1260,
     "waterY": 1170,
     "terrainSize": { "width": 2160, "height": 1080 },
-    "terrainTransform": { "scale": 1.3, "offsetX": 283, "offsetY": 225 },
+    "terrainTransform": { "scale": 1.43, "offsetX": 283, "offsetY": 316 },
     "spawnCoordinateSpace": "terrain",
     "spawnAnchor": "feet",
     "spawnPoints": [
