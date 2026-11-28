@@ -25,7 +25,7 @@ function bottomCenter({ data, width, height }: ImageData) {
   return { x: (left + right + 1) / 2, y: bottom + 1 }
 }
 
-export async function loadTerrainPlacement(map: ArenaMap) {
+export async function loadTerrainPlacement(map: ArenaMap, withPhysics: boolean) {
   const source = new Image()
   source.src = map.mask
   await source.decode()
@@ -50,6 +50,8 @@ export async function loadTerrainPlacement(map: ArenaMap) {
   }
 
   const placement = { x, y, width: width * scale, height: height * scale }
+  if (!withPhysics) return { placement }
+
   canvas.width = map.width
   canvas.height = map.height
   context.drawImage(source, x, y, placement.width, placement.height)
@@ -59,5 +61,5 @@ export async function loadTerrainPlacement(map: ArenaMap) {
     spawnCoordinateSpace: 'world',
     spawnPoints: map.spawnPoints.map(point => ({ ...point, x: x + point.x * scale, y: y + point.y * scale })),
   } : map
-  return { placement, pixels, worldMap }
+  return { placement, physics: { pixels, worldMap } }
 }
