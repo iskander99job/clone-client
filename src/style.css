@@ -181,7 +181,9 @@ body { margin: 0 }
 }
 
 .arena[data-map="house-of-cards"] .orchard,
-.arena[data-map="house-of-cards"] .clouds {
+.arena[data-map="house-of-cards"] .clouds,
+.arena[data-map="ancient_egypt"] .orchard,
+.arena[data-map="ancient_egypt"] .clouds {
   display: none;
 }
 

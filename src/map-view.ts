@@ -14,12 +14,13 @@ export function bindMapView(
   mapHeight: number,
   waterY: number,
   updateTerrainView?: (left: number, top: number, width: number, height: number) => void,
+  initialZoom = 1,
 ) {
   const camera = scene.cameras.main
   const water = arena.querySelector<HTMLElement>('.water')!
   const bubbles = water.querySelector<HTMLElement>('.water-bubbles')!
   const portrait = matchMedia('(orientation: portrait)')
-  let zoom = 1
+  let zoom = initialZoom
   const center = { x: mapWidth / 2, y: mapHeight / 2 }
   const pointers = new Map<number, Point>()
   const input = new AbortController()

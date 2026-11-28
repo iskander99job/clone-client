@@ -1,6 +1,7 @@
 .hud {
   --control-size: clamp(44px, 7cqw, 72px);
   --control-gap: clamp(8px, 1cqw, 14px);
+  --arena-picker-top: calc(max(10px, var(--safe-top)) + clamp(38px, 6cqw, 66px));
   --hud-glass: #172c396b;
   position: absolute;
   inset: 0;
@@ -28,7 +29,7 @@
 
 .build-version {
   position: absolute;
-  top: calc(max(10px, var(--safe-top)) + clamp(38px, 6cqw, 66px));
+  top: calc(var(--arena-picker-top) + 30px);
   left: 50%;
   transform: translateX(-50%);
   padding: 3px 6px;
@@ -284,3 +285,31 @@
 }
 
 .hud-button:disabled { opacity: .48; }
+
+#arena-picker {
+  position: absolute;
+  top: var(--arena-picker-top);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 55%;
+  color: #fff;
+  background: #19242ee6;
+  border: 1px solid #ffffff66;
+  border-radius: 6px;
+  padding: 4px;
+  pointer-events: auto;
+}
+
+.performance-diagnostics {
+  position: absolute;
+  top: calc(max(10px, var(--safe-top)) + clamp(38px, 6cqw, 66px) + 52px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  margin: 0;
+  padding: 5px 8px;
+  background: #101a24e6;
+  color: #fff;
+  font: 11px/1.45 monospace;
+  pointer-events: none;
+}

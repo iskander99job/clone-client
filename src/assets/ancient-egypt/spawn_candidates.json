@@ -1,0 +1,151 @@
+{
+  "coordinateSpace": "svg",
+  "spawnAnchor": "feet",
+  "width": 1400,
+  "height": 700,
+  "axisY": "down",
+  "qaStatus": "pending-engine-tests",
+  "assumptions": {
+    "provisionalBodyWidth": 28,
+    "provisionalBodyHeight": 28,
+    "basis": "P=0.04H per MAP STYLE GUIDE v1.5; B=P assumed for this preview only",
+    "recommendedNearLevelWidth": 84,
+    "headroom": 56,
+    "waterY": null,
+    "note": "Pixel-center surface sample at alpha >=128; exact contact, collider dimensions, jump, water and route accessibility require engine tests. The third candidate is a slightly narrower sloping shoulder."
+  },
+  "spawnCandidates": [
+    {
+      "id": "spawn_01",
+      "zone": "left_outer_ledge",
+      "x": 100,
+      "y": 456,
+      "surface_alpha_threshold": 128,
+      "local_surface_y_range": [
+        456,
+        457
+      ],
+      "local_surface_relief_px": 1,
+      "headroom_test_px": 56,
+      "headroom_clear": true,
+      "support_strip_solid": true,
+      "near_level_surface_width_px": 125,
+      "near_level_surface_x_range": [
+        39,
+        163
+      ],
+      "near_level_tolerance_y_px": 7,
+      "status": "candidate"
+    },
+    {
+      "id": "spawn_02",
+      "zone": "sphinx_east_upper_plateau",
+      "x": 430,
+      "y": 346,
+      "surface_alpha_threshold": 128,
+      "local_surface_y_range": [
+        346,
+        346
+      ],
+      "local_surface_relief_px": 0,
+      "headroom_test_px": 56,
+      "headroom_clear": true,
+      "support_strip_solid": true,
+      "near_level_surface_width_px": 112,
+      "near_level_surface_x_range": [
+        373,
+        484
+      ],
+      "near_level_tolerance_y_px": 7,
+      "status": "candidate"
+    },
+    {
+      "id": "spawn_03",
+      "zone": "obelisk_west_shoulder",
+      "x": 635,
+      "y": 389,
+      "surface_alpha_threshold": 128,
+      "local_surface_y_range": [
+        388,
+        391
+      ],
+      "local_surface_relief_px": 3,
+      "headroom_test_px": 56,
+      "headroom_clear": true,
+      "support_strip_solid": true,
+      "near_level_surface_width_px": 76,
+      "near_level_surface_x_range": [
+        600,
+        675
+      ],
+      "near_level_tolerance_y_px": 7,
+      "status": "candidate_narrower_than_3B"
+    },
+    {
+      "id": "spawn_04",
+      "zone": "central_low_saddle",
+      "x": 840,
+      "y": 458,
+      "surface_alpha_threshold": 128,
+      "local_surface_y_range": [
+        458,
+        458
+      ],
+      "local_surface_relief_px": 0,
+      "headroom_test_px": 56,
+      "headroom_clear": true,
+      "support_strip_solid": true,
+      "near_level_surface_width_px": 85,
+      "near_level_surface_x_range": [
+        796,
+        880
+      ],
+      "near_level_tolerance_y_px": 7,
+      "status": "candidate"
+    },
+    {
+      "id": "spawn_05",
+      "zone": "right_arch_upper_plateau",
+      "x": 970,
+      "y": 399,
+      "surface_alpha_threshold": 128,
+      "local_surface_y_range": [
+        399,
+        399
+      ],
+      "local_surface_relief_px": 0,
+      "headroom_test_px": 56,
+      "headroom_clear": true,
+      "support_strip_solid": true,
+      "near_level_surface_width_px": 125,
+      "near_level_surface_x_range": [
+        907,
+        1031
+      ],
+      "near_level_tolerance_y_px": 7,
+      "status": "candidate"
+    },
+    {
+      "id": "spawn_06",
+      "zone": "right_outer_ledge",
+      "x": 1290,
+      "y": 479,
+      "surface_alpha_threshold": 128,
+      "local_surface_y_range": [
+        479,
+        479
+      ],
+      "local_surface_relief_px": 0,
+      "headroom_test_px": 56,
+      "headroom_clear": true,
+      "support_strip_solid": true,
+      "near_level_surface_width_px": 134,
+      "near_level_surface_x_range": [
+        1229,
+        1362
+      ],
+      "near_level_tolerance_y_px": 7,
+      "status": "candidate"
+    }
+  ]
+}

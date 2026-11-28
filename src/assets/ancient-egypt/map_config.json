@@ -1,0 +1,88 @@
+{
+  "id": "ancient_egypt",
+  "name": "Древний Египет",
+  "preliminary": true,
+  "note": "Предварительная конфигурация. Требует проверки в актуальном движке, особенно семантики camera и terrainTransform.",
+  "worldWidth": 2160,
+  "worldHeight": 1080,
+  "waterY": 965,
+  "svgWidth": 1400,
+  "svgHeight": 700,
+  "viewBox": "0 0 1400 700",
+  "terrainTransform": {
+    "scale": 1.0,
+    "offsetX": 0,
+    "offsetY": 0,
+    "basis": "direct mapping from 1400x700 art space to 2160x1080 world space"
+  },
+  "spawnCoordinateSpace": "world",
+  "spawnAnchor": "feet",
+  "spawnPoints": [
+    {
+      "id": "spawn_01",
+      "x": 154,
+      "y": 704,
+      "sourceSvg": {
+        "x": 100,
+        "y": 456
+      },
+      "note": "candidate"
+    },
+    {
+      "id": "spawn_02",
+      "x": 663,
+      "y": 534,
+      "sourceSvg": {
+        "x": 430,
+        "y": 346
+      },
+      "note": "candidate"
+    },
+    {
+      "id": "spawn_03",
+      "x": 980,
+      "y": 600,
+      "sourceSvg": {
+        "x": 635,
+        "y": 389
+      },
+      "note": "candidate_narrower_than_3B"
+    },
+    {
+      "id": "spawn_04",
+      "x": 1296,
+      "y": 707,
+      "sourceSvg": {
+        "x": 840,
+        "y": 458
+      },
+      "note": "candidate"
+    },
+    {
+      "id": "spawn_05",
+      "x": 1497,
+      "y": 616,
+      "sourceSvg": {
+        "x": 970,
+        "y": 399
+      },
+      "note": "candidate"
+    },
+    {
+      "id": "spawn_06",
+      "x": 1990,
+      "y": 739,
+      "sourceSvg": {
+        "x": 1290,
+        "y": 479
+      },
+      "note": "candidate"
+    }
+  ],
+  "camera": {
+    "initialZoom": 1.0,
+    "mode": "fit",
+    "note": "Preliminary field set based on style guide example; verify actual runtime schema."
+  },
+  "qaStatus": "pending-engine-tests"
+}

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" viewBox="0 0 1400 700" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="bg-sky-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1ec5cf"/>
+      <stop offset="62%" stop-color="#93d8c2"/>
+      <stop offset="100%" stop-color="#f1d778"/>
+    </linearGradient>
+    <linearGradient id="bg-haze-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e5f3d5" stop-opacity="0.00"/>
+      <stop offset="100%" stop-color="#f6e39a" stop-opacity="0.44"/>
+    </linearGradient>
+  </defs>
+  <g id="bg-sky">
+    <rect id="bg-sky-fill" width="1400" height="700" fill="url(#bg-sky-gradient)"/>
+    <rect id="bg-sky-haze" width="1400" height="700" fill="url(#bg-haze-gradient)"/>
+  </g>
+  <g id="bg-clouds" fill="#d7eef1" fill-opacity="0.74">
+    <path id="bg-cloud-left" d="M144 178c9-19 35-32 67-31c10-18 33-31 61-31c38 0 67 22 73 53c26-1 44 10 49 28c5 14-10 22-27 22H149c-28 0-40-17-33-41c4-13 12-23 28-28z"/>
+    <path id="bg-cloud-left-swirl-1" d="M220 184c12-22 41-19 47 2c4 13-6 25-19 27c13-11 9-32-8-36c-7-2-14 0-20 7z" fill="#b8d8df" fill-opacity="0.55"/>
+    <path id="bg-cloud-left-swirl-2" d="M314 154c14-25 48-24 61 0c11 20 2 41-17 48c13-13 13-33 2-45c-11-13-31-15-46-3z" fill="#b8d8df" fill-opacity="0.55"/>
+    <path id="bg-cloud-right" d="M1160 142c9-17 31-28 57-27c9-17 30-28 56-28c36 0 64 20 70 49c24-1 42 9 47 25c4 13-10 20-25 20h-237c-27 0-39-15-32-37c4-12 12-20 24-25z"/>
+    <path id="bg-cloud-right-swirl-1" d="M1221 144c11-19 36-17 42 2c4 12-5 22-17 24c12-9 8-28-7-32c-6-2-12 0-18 6z" fill="#b8d8df" fill-opacity="0.55"/>
+    <path id="bg-cloud-right-swirl-2" d="M1300 112c13-22 43-22 55 0c10 18 2 37-15 43c12-12 11-29 1-40c-10-11-28-13-41-3z" fill="#b8d8df" fill-opacity="0.55"/>
+  </g>
+  <g id="bg-pyramids">
+    <path id="bg-pyramid-left" d="M523 399L610 302l100 97z" fill="#78c1ba" fill-opacity="0.72"/>
+    <path id="bg-pyramid-right" d="M758 409l154-181l154 181z" fill="#75beb8" fill-opacity="0.72"/>
+  </g>
+  <g id="bg-ruins">
+    <path id="bg-obelisk-left" d="M109 395l21-41h18v41l-4 90h-31z" fill="#7db7a3" fill-opacity="0.66"/>
+    <path id="bg-ruins-right" d="M1260 392h58l4 14v57h-16v-43h-11v43h-18v-43h-11v43h-20l4-14z" fill="#7cb6a1" fill-opacity="0.66"/>
+  </g>
+  <g id="bg-dunes">
+    <path id="bg-dune-back" d="M0 474c72-27 176-23 253 7c80 30 161 33 250 10c90-24 184-25 279 1c92 25 175 26 255 3c92-27 180-22 279 17c33 13 59 17 84 11v178H0z" fill="#bfd9a2" fill-opacity="0.56"/>
+    <path id="bg-dune-back-2" d="M0 510c78-23 158-20 237 12c71 28 168 32 269 8c105-25 190-29 287-1c86 25 182 25 259 3c84-24 175-18 257 18c29 13 57 19 91 14v136H0z" fill="#b1cf92" fill-opacity="0.30"/>
+    <path id="bg-dune-front" d="M0 582c105-31 214-28 333 1c134 34 282 51 438 17c93-20 184-18 272 5c90 24 181 24 268 2c30-7 60-10 91-8v101H0z" fill="#efd476"/>
+    <path id="bg-dune-front-2" d="M0 607c117-28 237-20 354 14c131 37 270 43 412 14c85-18 172-16 255 3c82 19 171 18 261-2c40-9 80-13 118-11v75H0z" fill="#f3dc8e"/>
+  </g>
+</svg>

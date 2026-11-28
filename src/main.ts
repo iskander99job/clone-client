@@ -1,25 +1,19 @@
 import Phaser from 'phaser'
-import { FLAT_TEST, FRUIT_ARENA, FRUIT_FOREGROUND, HOUSE_OF_CARDS, STONE_QUARRY } from './maps'
+import { ARENAS } from './maps'
 import { addIslandFighter } from './island-fighter'
 import { bindMapView } from './map-view'
 import { createRasterTerrain, createVectorTerrain } from './terrain-view'
 import { createSvgViewport } from './svg-viewport'
 import { loadTerrainPlacement } from './terrain-placement'
 import { mountSvgBackground } from './background-renderer'
+import { mountPerformanceDiagnostics } from './performance-diagnostics'
 import './style.css'
 import './hud.css'
 
-// Keep the island's world dimensions independent of the texture resolution.
-const requestedMap = new URLSearchParams(location.search).get('map')
-const mapId = requestedMap === 'fruit' || requestedMap === 'quarry' || requestedMap === 'flat'
-  || requestedMap === 'fruit-foreground' ? requestedMap : 'house-of-cards'
-const map = {
-  flat: FLAT_TEST,
-  fruit: FRUIT_ARENA,
-  quarry: STONE_QUARRY,
-  'fruit-foreground': FRUIT_FOREGROUND,
-  'house-of-cards': HOUSE_OF_CARDS,
-}[mapId]
+const url = new URL(location.href)
+const requestedMap = url.searchParams.get('map')
+const mapId = requestedMap && Object.hasOwn(ARENAS, requestedMap) ? requestedMap : 'house-of-cards'
+const map = ARENAS[mapId]
 const { width, height, waterY } = map
 const arena = document.querySelector<HTMLElement>('.arena')!
 const field = document.querySelector<HTMLElement>('#field')!
@@ -38,6 +32,15 @@ arena.dataset.map = mapId
 document.title = `Кратер — ${map.title}`
 const buildVersion = import.meta.env.VITE_BUILD_SHA?.slice(0, 7) || 'dev'
 document.querySelector<HTMLElement>('#build-version')!.textContent = `Сборка ${buildVersion}`
+
+const mapPicker = arena.querySelector<HTMLSelectElement>('#arena-picker')!
+for (const [id, entry] of Object.entries(ARENAS)) {
+  mapPicker.add(new Option(entry.title, id, false, id === mapId))
+}
+mapPicker.addEventListener('change', () => {
+  url.searchParams.set('map', mapPicker.value)
+  location.assign(url)
+})
 
 const clouds = Array.from(arena.querySelectorAll<HTMLElement>('.clouds span'))
 const lanes = clouds.map((_, index) => index)
@@ -115,8 +118,11 @@ class Arena extends Phaser.Scene {
     bindMapView(arena, this, width, height, waterY, (left, top, visibleWidth, visibleHeight) => {
       vector?.updateView(left, top, visibleWidth, visibleHeight)
       actors.updateView(left, top, visibleWidth, visibleHeight)
-    })
+    }, map.initialZoom)
     await addIslandFighter(this, arena, worldMap, pixels, terrain.cutCrater, actors.svg)
+    if (this.sys.isActive() && url.searchParams.get('perf') === '1') {
+      this.events.once('shutdown', mountPerformanceDiagnostics(arena))
+    }
   }
 }
 
