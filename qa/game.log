@@ -1,0 +1,11 @@
+Camera 0.75/1/1.75; four pan limits; fixed proportional SVG cover; matching terrain/actors/Phaser/water
+Resized game in place: 1280x720, 1024x320, 390x844, 844x390
+HUD shot in flight while zooming; graphics share rocket's physics XY; impact cuts mask and SVG
+house-of-cards: all 4 configured spawns settled on actual ground
+flat: all 4 configured spawns settled on actual ground
+fruit-foreground: all 4 configured spawns settled on actual ground
+quarry: all 4 configured spawns settled on actual ground
+fruit: all 4 configured spawns settled on actual ground
+Real fall into water: destroyed start rejected; occupied reserve rejected on next fall
+No usable spawn: character waits outside play, firing disabled
+Legacy X-only spawn and defeat on water in non-respawn duel
