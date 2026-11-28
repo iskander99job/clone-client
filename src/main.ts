@@ -121,7 +121,7 @@ class Arena extends Phaser.Scene {
 }
 
 new Phaser.Game({
-  type: Phaser.AUTO,
+  type: map.vectorArt === undefined ? Phaser.AUTO : Phaser.CANVAS,
   transparent: true,
   width: field.clientWidth,
   height: field.clientHeight,

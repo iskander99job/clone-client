@@ -16,10 +16,16 @@ export function bindMapView(
   updateTerrainView?: (left: number, top: number, width: number, height: number) => void,
 ) {
   const camera = scene.cameras.main
+  const water = arena.querySelector<HTMLElement>('.water')!
+  const bubbles = water.querySelector<HTMLElement>('.water-bubbles')!
   const portrait = matchMedia('(orientation: portrait)')
   let zoom = 1
   const center = { x: mapWidth / 2, y: mapHeight / 2 }
   const pointers = new Map<number, Point>()
+  const input = new AbortController()
+  const { signal } = input
+  let frame = 0
+  let previousView: { scale: number; left: number; top: number; width: number; height: number } | undefined
 
   function cameraZoom(multiplier = zoom) {
     return Math.min(camera.width / mapWidth, camera.height / mapHeight) * multiplier
@@ -30,20 +36,30 @@ export function bindMapView(
     return clamp(value, mapSize / 2 - limit, mapSize / 2 + limit)
   }
 
-  function render() {
+  function clampCenter() {
     const scale = cameraZoom()
     if (scale <= 0) return
     center.x = boundCenter(center.x, mapWidth, camera.width / scale)
     const verticalTravel = Math.min(camera.height * 0.2, 180) / scale
     center.y = boundCenter(center.y, mapHeight, camera.height / scale, verticalTravel)
-    camera.setZoom(scale).centerOn(center.x, center.y)
+  }
+
+  function render() {
+    frame = 0
+    clampCenter()
+    const scale = cameraZoom()
+    if (scale <= 0) return
     const mapLeft = camera.width / 2 - center.x * scale
     const mapTop = camera.height / 2 - center.y * scale
+    if (previousView?.scale === scale && previousView.left === mapLeft && previousView.top === mapTop
+      && previousView.width === camera.width && previousView.height === camera.height) return
+    camera.setZoom(scale).centerOn(center.x, center.y)
     updateTerrainView?.(-mapLeft / scale, -mapTop / scale, camera.width / scale, camera.height / scale)
-    arena.style.setProperty('--map-left', `${mapLeft}px`)
-    arena.style.setProperty('--map-scale', String(scale))
-    const waterTop = camera.height / 2 + (waterY - center.y) * scale
-    arena.style.setProperty('--water-top', `${waterTop}px`)
+    if (previousView?.left !== mapLeft) bubbles.style.setProperty('--map-left', `${mapLeft}px`)
+    if (previousView?.scale !== scale) bubbles.style.setProperty('--map-scale', String(scale))
+    const waterTop = mapTop + waterY * scale
+    water.style.setProperty('--water-top', `${waterTop}px`)
+    previousView = { scale, left: mapLeft, top: mapTop, width: camera.width, height: camera.height }
   }
 
   function moveView(from: Point, to: Point, requestedZoom: number) {
@@ -56,7 +72,8 @@ export function bindMapView(
     zoom = nextZoom
     center.x += from.x / previousScale - to.x / nextScale
     center.y += from.y / previousScale - to.y / nextScale
-    render()
+    clampCenter()
+    if (!frame) frame = requestAnimationFrame(render)
   }
 
   function point(event: MouseEvent): Point {
@@ -87,7 +104,7 @@ export function bindMapView(
     }
     const anchor = point(event)
     moveView(anchor, anchor, zoom * Math.exp(-event.deltaY * units * 0.002))
-  }, { passive: false })
+  }, { passive: false, signal })
 
   arena.addEventListener('pointerdown', event => {
     if (event.target instanceof Element && event.target.closest('.hud')) return
@@ -95,7 +112,7 @@ export function bindMapView(
     arena.setPointerCapture(event.pointerId)
     pointers.set(event.pointerId, point(event))
     arena.dataset.panning = ''
-  })
+  }, { signal })
 
   arena.addEventListener('pointermove', event => {
     if (!pointers.has(event.pointerId)) return
@@ -104,16 +121,23 @@ export function bindMapView(
     const after = gesture()
     const ratio = before.distance > 0 ? after.distance / before.distance : 1
     moveView(before.center, after.center, zoom * ratio)
-  })
+  }, { signal })
 
   for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {
     arena.addEventListener(type, event => {
       if (pointers.delete(event.pointerId) && !pointers.size) delete arena.dataset.panning
-    })
+    }, { signal })
   }
 
-  const resize = () => render()
+  const resize = () => {
+    cancelAnimationFrame(frame)
+    render()
+  }
   scene.scale.on('resize', resize)
-  scene.events.once('shutdown', () => scene.scale.off('resize', resize))
+  scene.events.once('shutdown', () => {
+    input.abort()
+    cancelAnimationFrame(frame)
+    scene.scale.off('resize', resize)
+  })
   render()
 }

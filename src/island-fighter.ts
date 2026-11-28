@@ -73,11 +73,12 @@ export async function addIslandFighter(
   const weaponAsset = new DOMParser().parseFromString(bazookaSvg, 'image/svg+xml').documentElement as unknown as SVGSVGElement
   const weapon = new WeaponController(animator, [{ config: weaponConfig as WeaponConfig, svg: weaponAsset }], weaponMotion)
   weapon.setAimAngle(24)
-  const effects = scene.add.graphics().setName('shot-effects')
+  const effects = scene.add.graphics().setName('shot-effects').setVisible(false)
   let lastBlast: Point | undefined
 
   function syncShoot() {
-    shoot.toggleAttribute('disabled', !body.isEnabled() || duel.phase !== 'aim' || !weapon.canShoot())
+    const disabled = !body.isEnabled() || duel.phase !== 'aim' || !weapon.canShoot()
+    if (shoot.disabled !== disabled) shoot.disabled = disabled
   }
 
   function syncWeapon() {
@@ -239,11 +240,18 @@ export async function addIslandFighter(
     // Keep the supplied stride cadence at the game's normal movement speed.
     const strideSpeed = walking ? animator.referenceSpeed * Math.abs(velocity.x) / WALK_SPEED : 0
     animator.update(STEP * 1000, strideSpeed)
-    sprite.setAttribute('transform', `translate(${feet.x} ${feet.y + RADIUS}) scale(${baseScale})`)
+    const transform = `translate(${feet.x.toFixed(2)} ${(feet.y + RADIUS).toFixed(2)}) scale(${baseScale})`
+    if (sprite.getAttribute('transform') !== transform) sprite.setAttribute('transform', transform)
 
     weapon.update(STEP * 1000)
     syncShoot()
-    effects.clear()
+  }
+
+  function drawEffects() {
+    const blastVisible = duel.blast !== undefined && duel.blastAge < 0.28
+    const visible = duel.trail.length > 0 || duel.rocket !== undefined || blastVisible
+    if (!visible && !effects.visible) return
+    effects.setVisible(visible).clear()
     for (const [index, point] of duel.trail.entries()) {
       effects.fillStyle(0xffd586, (index + 1) / duel.trail.length * 0.65).fillCircle(point.x, point.y, 4)
     }
@@ -251,7 +259,7 @@ export async function addIslandFighter(
       const point = duel.rocket.translation()
       effects.fillStyle(0xfff2cc).fillCircle(point.x, point.y, 6)
     }
-    if (duel.blast && duel.blastAge < 0.28) {
+    if (duel.blast && blastVisible) {
       const age = duel.blastAge / 0.28
       effects.lineStyle(5, 0xffa94d, 1 - age).strokeCircle(duel.blast.x, duel.blast.y, 12 + 55 * age)
     }
@@ -259,10 +267,12 @@ export async function addIslandFighter(
 
   function update(_time: number, delta: number) {
     accumulator += Math.min(delta / 1000, 0.1)
+    if (accumulator < STEP) return
     while (accumulator >= STEP) {
       step()
       accumulator -= STEP
     }
+    drawEffects()
   }
 
   scene.events.on('update', update)
