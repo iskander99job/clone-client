@@ -9,9 +9,9 @@ import fruit2xUrl from './assets/fruit-island-2x.webp'
 import quarryUrl from './assets/stone-quarry.webp'
 import quarryMaskUrl from './assets/stone-quarry-mask.png'
 import { FRUIT_ISLAND } from './fruit-island'
-import { mapLayout, type SpawnConfiguration, type TerrainMap } from './map-config'
+import { mapLayout, type SpawnConfiguration, type TerrainMap, type TerrainPlacementConfig } from './map-config'
 
-export type ArenaMap = TerrainMap & SpawnConfiguration & {
+export type ArenaMap = TerrainMap & SpawnConfiguration & TerrainPlacementConfig & {
   title: string
   mask: string
   fighterSize: number

@@ -1,5 +1,6 @@
 import RAPIER from '@dimforge/rapier2d-compat'
 import { contours } from 'd3-contour'
+import { SOLID_ALPHA } from './terrain-placement'
 import { simplifyRing } from './terrain-contour'
 import type { SpawnPoint, TerrainMap } from './map-config'
 
@@ -46,7 +47,7 @@ export function terrainMaskFromPixels(rgba: Uint8ClampedArray, width = WIDTH, he
   return Array.from({ length: columns * rows }, (_, index) => {
     const x = index % columns * CELL + CELL / 2
     const y = Math.floor(index / columns) * CELL + CELL / 2
-    return Number(rgba[(y * width + x) * 4 + 3] >= 128)
+    return Number(rgba[(y * width + x) * 4 + 3] >= SOLID_ALPHA)
   })
 }
 
