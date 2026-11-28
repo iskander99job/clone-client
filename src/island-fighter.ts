@@ -23,20 +23,11 @@ export async function addIslandFighter(
   scene: Phaser.Scene,
   arena: HTMLElement,
   map: ArenaMap,
+  pixels: Uint8ClampedArray,
   cutCrater: (point: Point, radius: number) => void,
   actors: SVGSVGElement,
 ) {
   const { width, height, waterY } = map
-  const source = new Image()
-  source.src = map.mask
-  await source.decode()
-  if (!scene.sys.isActive()) return
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  const context = canvas.getContext('2d')!
-  context.drawImage(source, 0, 0, width, height)
-  const pixels = context.getImageData(0, 0, width, height).data
   const { Duel, initPhysics, RADIUS, STEP, BLAST, terrainMaskFromPixels } = await import('./duel')
   await initPhysics()
   if (!scene.sys.isActive()) return

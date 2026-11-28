@@ -1,6 +1,7 @@
 import type Phaser from 'phaser'
 import polygonClipping, { type MultiPolygon, type Ring } from 'polygon-clipping'
 import type { Point } from './duel'
+import type { TerrainPlacement } from './terrain-placement'
 import { createSvgViewport, SVG_NS } from './svg-viewport'
 
 const CRATER_SEGMENTS = 96
@@ -11,6 +12,7 @@ export function createVectorTerrain(
   artwork: string,
   width: number,
   height: number,
+  placement: TerrainPlacement,
 ) {
   const { svg: viewport, updateView } = createSvgViewport(scene, 'vector-terrain')
 
@@ -18,8 +20,10 @@ export function createVectorTerrain(
   // The SVG is a bundled project asset. Keep its paths inline for native rendering.
   art.innerHTML = artwork
   const drawing = art.querySelector('svg')!
-  drawing.setAttribute('width', String(width))
-  drawing.setAttribute('height', String(height))
+  drawing.setAttribute('x', String(placement.x))
+  drawing.setAttribute('y', String(placement.y))
+  drawing.setAttribute('width', String(placement.width))
+  drawing.setAttribute('height', String(placement.height))
   drawing.setAttribute('preserveAspectRatio', 'none')
 
   const defs = document.createElementNS(SVG_NS, 'defs')
@@ -30,6 +34,9 @@ export function createVectorTerrain(
   const outline = clip.appendChild(document.createElementNS(SVG_NS, 'path'))
   outline.setAttribute('clip-rule', 'evenodd')
   let remaining: MultiPolygon = [[[[0, 0], [width, 0], [width, height], [0, height], [0, 0]]]]
+
+  outline.setAttribute('d', `M0,0H${width}V${height}H0Z`)
+  art.setAttribute('clip-path', `url(#${clip.id})`)
 
   field.prepend(viewport)
 
@@ -47,13 +54,29 @@ export function createVectorTerrain(
         return `M${coordinates}Z`
       })).join(' ')
       outline.setAttribute('d', path)
-      art.setAttribute('clip-path', `url(#${clip.id})`)
     },
   }
 }
 
-export function createRasterTerrain(scene: Phaser.Scene, width: number, height: number) {
-  const terrain = scene.add.image(0, 0, 'terrain-art').setOrigin(0).setDisplaySize(width, height)
+export function createRasterTerrain(scene: Phaser.Scene, width: number, height: number, placement: TerrainPlacement) {
+  const { x, y } = placement
+  const terrain = scene.add.image(x, y, 'terrain-art').setOrigin(0)
+
+  function placeTexture() {
+    terrain.setDisplaySize(placement.width, placement.height)
+    const left = Math.max(0, -x)
+    const top = Math.max(0, -y)
+    const right = Math.min(placement.width, width - x)
+    const bottom = Math.min(placement.height, height - y)
+    if (right <= left || bottom <= top) {
+      terrain.setVisible(false)
+    } else if (left > 0 || top > 0 || right < placement.width || bottom < placement.height) {
+      const sx = terrain.width / placement.width
+      const sy = terrain.height / placement.height
+      terrain.setCrop(left * sx, top * sy, (right - left) * sx, (bottom - top) * sy)
+    }
+  }
+  placeTexture()
   let damagedTerrain: Phaser.Textures.CanvasTexture | null = null
 
   scene.events.once('shutdown', () => {
@@ -67,15 +90,16 @@ export function createRasterTerrain(scene: Phaser.Scene, width: number, height: 
         damagedTerrain = scene.textures.createCanvas('damaged-terrain', art.width, art.height)
         if (!damagedTerrain) return
         damagedTerrain.context.drawImage(art, 0, 0)
-        terrain.setTexture(damagedTerrain.key).setDisplaySize(width, height)
+        terrain.setTexture(damagedTerrain.key)
+        placeTexture()
       }
 
       const context = damagedTerrain.context
       context.save()
-      context.scale(damagedTerrain.width / width, damagedTerrain.height / height)
+      context.scale(damagedTerrain.width / placement.width, damagedTerrain.height / placement.height)
       context.globalCompositeOperation = 'destination-out'
       context.beginPath()
-      context.arc(point.x, point.y, radius, 0, Math.PI * 2)
+      context.arc(point.x - x, point.y - y, radius, 0, Math.PI * 2)
       context.fill()
       context.restore()
       damagedTerrain.refresh()

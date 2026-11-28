@@ -4,6 +4,7 @@ import { addIslandFighter } from './island-fighter'
 import { bindMapView } from './map-view'
 import { createRasterTerrain, createVectorTerrain } from './terrain-view'
 import { createSvgViewport } from './svg-viewport'
+import { loadTerrainPlacement } from './terrain-placement'
 import { mountSvgBackground } from './background-renderer'
 import './style.css'
 import './hud.css'
@@ -84,18 +85,9 @@ class Arena extends Phaser.Scene {
   }
 
   create() {
-    const vector = map.vectorArt === undefined ? undefined : createVectorTerrain(this, field, map.vectorArt, width, height)
-    if (!vector && !this.textures.exists('terrain-art')) return
-    const terrain = vector ?? createRasterTerrain(this, width, height)
     if (map.backgroundSvg) {
       this.events.once('shutdown', mountSvgBackground(field, map.backgroundSvg))
     }
-    const actors = createSvgViewport(this, 'vector-actors')
-    field.append(actors.svg)
-    bindMapView(arena, this, width, height, waterY, (left, top, visibleWidth, visibleHeight) => {
-      vector?.updateView(left, top, visibleWidth, visibleHeight)
-      actors.updateView(left, top, visibleWidth, visibleHeight)
-    })
     // Phaser RESIZE measures the transformed bounding box. Use the actual layout size instead.
     const observer = new ResizeObserver(() => {
       const { clientWidth, clientHeight } = field
@@ -106,9 +98,25 @@ class Arena extends Phaser.Scene {
     })
     observer.observe(field)
     this.events.once('shutdown', () => observer.disconnect())
-    void addIslandFighter(this, arena, map, terrain.cutCrater, actors.svg).catch(error => {
-      console.error('Не удалось запустить управление персонажем', error)
+    void this.startTerrain().catch(error => {
+      console.error('Не удалось запустить карту', error)
     })
+  }
+
+  private async startTerrain() {
+    const { placement, pixels, worldMap } = await loadTerrainPlacement(map)
+    if (!this.sys.isActive()) return
+    const vector = map.vectorArt === undefined ? undefined
+      : createVectorTerrain(this, field, map.vectorArt, width, height, placement)
+    if (!vector && !this.textures.exists('terrain-art')) return
+    const terrain = vector ?? createRasterTerrain(this, width, height, placement)
+    const actors = createSvgViewport(this, 'vector-actors')
+    field.append(actors.svg)
+    bindMapView(arena, this, width, height, waterY, (left, top, visibleWidth, visibleHeight) => {
+      vector?.updateView(left, top, visibleWidth, visibleHeight)
+      actors.updateView(left, top, visibleWidth, visibleHeight)
+    })
+    await addIslandFighter(this, arena, worldMap, pixels, terrain.cutCrater, actors.svg)
   }
 }
 
