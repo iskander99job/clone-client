@@ -1,21 +1,22 @@
 import Phaser from 'phaser'
-import { FLAT_TEST, FRUIT_ARENA, FRUIT_FOREGROUND, STONE_QUARRY } from './maps'
+import { FLAT_TEST, FRUIT_ARENA, FRUIT_FOREGROUND, HOUSE_OF_CARDS, STONE_QUARRY } from './maps'
 import { addIslandFighter } from './island-fighter'
 import { bindMapView } from './map-view'
 import { createRasterTerrain, createVectorTerrain } from './terrain-view'
-import { createSvgViewport } from './svg-viewport'
+import { createSvgViewport, SVG_NS } from './svg-viewport'
 import './style.css'
 import './hud.css'
 
 // Keep the island's world dimensions independent of the texture resolution.
 const requestedMap = new URLSearchParams(location.search).get('map')
 const mapId = requestedMap === 'fruit' || requestedMap === 'quarry' || requestedMap === 'flat'
-  ? requestedMap : 'fruit-foreground'
+  || requestedMap === 'fruit-foreground' ? requestedMap : 'house-of-cards'
 const map = {
   flat: FLAT_TEST,
   fruit: FRUIT_ARENA,
   quarry: STONE_QUARRY,
   'fruit-foreground': FRUIT_FOREGROUND,
+  'house-of-cards': HOUSE_OF_CARDS,
 }[mapId]
 const { width, height, waterY } = map
 const arena = document.querySelector<HTMLElement>('.arena')!
@@ -85,9 +86,19 @@ class Arena extends Phaser.Scene {
     const vector = map.vectorArt === undefined ? undefined : createVectorTerrain(this, field, map.vectorArt, width, height)
     if (!vector && !this.textures.exists('terrain-art')) return
     const terrain = vector ?? createRasterTerrain(this, width, height)
+    let background: ReturnType<typeof createSvgViewport> | undefined
+    if (map.background) {
+      background = createSvgViewport(this, 'map-background')
+      const image = background.svg.appendChild(document.createElementNS(SVG_NS, 'image'))
+      image.setAttribute('href', map.background)
+      image.setAttribute('width', String(width))
+      image.setAttribute('height', String(height))
+      field.before(background.svg)
+    }
     const actors = createSvgViewport(this, 'vector-actors')
     field.append(actors.svg)
     bindMapView(arena, this, width, height, waterY, (left, top, visibleWidth, visibleHeight) => {
+      background?.updateView(left, top, visibleWidth, visibleHeight)
       vector?.updateView(left, top, visibleWidth, visibleHeight)
       actors.updateView(left, top, visibleWidth, visibleHeight)
     })
