@@ -284,33 +284,3 @@
 }
 
 .hud-button:disabled { opacity: .48; }
-
-.svg-test-controls {
-  position: absolute;
-  top: 50%;
-  right: max(10px, var(--safe-right));
-  transform: translateY(-50%);
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  padding: 6px;
-  border-radius: 12px;
-  color: #fff;
-  background: #172c39dc;
-  pointer-events: auto;
-}
-
-.svg-test-controls button {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 1px solid #ffffff80;
-  border-radius: 8px;
-  background: #284251;
-  color: inherit;
-  font: inherit;
-  font-size: 1.1rem;
-  cursor: pointer;
-}
-
-.svg-test-controls button:disabled { opacity: .45; }
