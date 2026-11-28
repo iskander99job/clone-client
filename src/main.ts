@@ -3,7 +3,7 @@ import { FLAT_TEST, FRUIT_ARENA, FRUIT_FOREGROUND, HOUSE_OF_CARDS, STONE_QUARRY 
 import { addIslandFighter } from './island-fighter'
 import { bindMapView } from './map-view'
 import { createRasterTerrain, createVectorTerrain } from './terrain-view'
-import { createSvgViewport } from './svg-viewport'
+import { createSvgViewport, SVG_NS } from './svg-viewport'
 import { loadTerrainPlacement } from './terrain-placement'
 import { mountSvgBackground } from './background-renderer'
 import './style.css'
@@ -13,6 +13,7 @@ import './hud.css'
 const query = new URLSearchParams(location.search)
 const requestedMap = query.get('map')
 const cameraOnly = query.get('player') === 'off'
+const centerOnly = query.get('terrain') === 'off'
 const mapId = requestedMap === 'fruit' || requestedMap === 'quarry' || requestedMap === 'flat'
   || requestedMap === 'fruit-foreground' ? requestedMap : 'house-of-cards'
 const map = {
@@ -77,7 +78,7 @@ for (let index = 0; index < bubbleCount; index++) {
 
 class Arena extends Phaser.Scene {
   preload() {
-    if (map.art !== undefined) {
+    if (!centerOnly && map.art !== undefined) {
       const renderer = this.game.renderer
       const largeArt = map.largeArt
       const supportsLargeTexture = largeArt && (!(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)
@@ -106,6 +107,22 @@ class Arena extends Phaser.Scene {
   }
 
   private async startTerrain() {
+    if (centerOnly) {
+      const { svg, updateView } = createSvgViewport(this, 'vector-actors')
+      const size = 48
+      const marker = svg.appendChild(document.createElementNS(SVG_NS, 'rect'))
+      marker.id = 'world-center'
+      marker.setAttribute('x', String((width - size) / 2))
+      marker.setAttribute('y', String((height - size) / 2))
+      marker.setAttribute('width', String(size))
+      marker.setAttribute('height', String(size))
+      marker.setAttribute('fill', '#fff')
+      marker.setAttribute('stroke', '#172c39')
+      marker.setAttribute('stroke-width', '5')
+      field.append(svg)
+      bindMapView(arena, this, width, height, waterY, updateView)
+      return
+    }
     const { placement, pixels, worldMap } = await loadTerrainPlacement(map)
     if (!this.sys.isActive()) return
     const vector = map.vectorArt === undefined ? undefined
