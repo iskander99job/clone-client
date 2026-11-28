@@ -7,12 +7,14 @@ import { createRasterTerrain, createVectorTerrain } from './terrain-view'
 import { createSvgViewport, SVG_NS } from './svg-viewport'
 import { loadTerrainPlacement } from './terrain-placement'
 import { mountSvgBackground } from './background-renderer'
+import { mountSvgObjectTest } from './svg-object-test'
 import './style.css'
 import './hud.css'
 
 // Keep the island's world dimensions independent of the texture resolution.
 const query = new URLSearchParams(location.search)
 const requestedMap = query.get('map')
+const svgObjectTest = query.get('terrain') === 'svg-test'
 const centerOnly = query.get('terrain') === 'off'
 const mapId = requestedMap === 'fruit' || requestedMap === 'quarry' || requestedMap === 'flat'
   || requestedMap === 'fruit-foreground' ? requestedMap : 'house-of-cards'
@@ -82,7 +84,7 @@ class Arena extends Phaser.Scene {
   preload() {
     if (textureTest) {
       this.load.image('terrain-art', cardsTerrainTexture)
-    } else if (!centerOnly && map.art !== undefined) {
+    } else if (!centerOnly && !svgObjectTest && map.art !== undefined) {
       const renderer = this.game.renderer
       const largeArt = map.largeArt
       const supportsLargeTexture = largeArt && (!(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)
@@ -111,18 +113,22 @@ class Arena extends Phaser.Scene {
   }
 
   private async startTerrain() {
-    if (centerOnly) {
+    if (centerOnly || svgObjectTest) {
       const { svg, updateView } = createSvgViewport(this, 'vector-actors')
-      const size = 48
-      const marker = svg.appendChild(document.createElementNS(SVG_NS, 'rect'))
-      marker.id = 'world-center'
-      marker.setAttribute('x', String((width - size) / 2))
-      marker.setAttribute('y', String((height - size) / 2))
-      marker.setAttribute('width', String(size))
-      marker.setAttribute('height', String(size))
-      marker.setAttribute('fill', '#fff')
-      marker.setAttribute('stroke', '#172c39')
-      marker.setAttribute('stroke-width', '5')
+      if (svgObjectTest) {
+        this.events.once('shutdown', mountSvgObjectTest(arena, svg, width, height))
+      } else {
+        const size = 48
+        const marker = svg.appendChild(document.createElementNS(SVG_NS, 'rect'))
+        marker.id = 'world-center'
+        marker.setAttribute('x', String((width - size) / 2))
+        marker.setAttribute('y', String((height - size) / 2))
+        marker.setAttribute('width', String(size))
+        marker.setAttribute('height', String(size))
+        marker.setAttribute('fill', '#fff')
+        marker.setAttribute('stroke', '#172c39')
+        marker.setAttribute('stroke-width', '5')
+      }
       field.append(svg)
       bindMapView(arena, this, width, height, waterY, updateView)
       return
