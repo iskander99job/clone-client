@@ -1,21 +1,16 @@
 import Phaser from 'phaser'
-import cardsTerrainTexture from './assets/house-of-cards/terrain-test.png'
 import { FLAT_TEST, FRUIT_ARENA, FRUIT_FOREGROUND, HOUSE_OF_CARDS, STONE_QUARRY } from './maps'
 import { addIslandFighter } from './island-fighter'
 import { bindMapView } from './map-view'
 import { createRasterTerrain, createVectorTerrain } from './terrain-view'
-import { createSvgViewport, SVG_NS } from './svg-viewport'
+import { createSvgViewport } from './svg-viewport'
 import { loadTerrainPlacement } from './terrain-placement'
 import { mountSvgBackground } from './background-renderer'
-import { mountSvgObjectTest } from './svg-object-test'
 import './style.css'
 import './hud.css'
 
 // Keep the island's world dimensions independent of the texture resolution.
-const query = new URLSearchParams(location.search)
-const requestedMap = query.get('map')
-const svgObjectTest = query.get('terrain') === 'svg-test'
-const centerOnly = query.get('terrain') === 'off'
+const requestedMap = new URLSearchParams(location.search).get('map')
 const mapId = requestedMap === 'fruit' || requestedMap === 'quarry' || requestedMap === 'flat'
   || requestedMap === 'fruit-foreground' ? requestedMap : 'house-of-cards'
 const map = {
@@ -25,8 +20,6 @@ const map = {
   'fruit-foreground': FRUIT_FOREGROUND,
   'house-of-cards': HOUSE_OF_CARDS,
 }[mapId]
-const textureTest = mapId === 'house-of-cards' && query.get('terrain') === 'texture'
-const cameraOnly = query.get('player') === 'off' || textureTest
 const { width, height, waterY } = map
 const arena = document.querySelector<HTMLElement>('.arena')!
 const field = document.querySelector<HTMLElement>('#field')!
@@ -82,9 +75,7 @@ for (let index = 0; index < bubbleCount; index++) {
 
 class Arena extends Phaser.Scene {
   preload() {
-    if (textureTest) {
-      this.load.image('terrain-art', cardsTerrainTexture)
-    } else if (!centerOnly && !svgObjectTest && map.art !== undefined) {
+    if (map.art !== undefined) {
       const renderer = this.game.renderer
       const largeArt = map.largeArt
       const supportsLargeTexture = largeArt && (!(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)
@@ -113,29 +104,9 @@ class Arena extends Phaser.Scene {
   }
 
   private async startTerrain() {
-    if (centerOnly || svgObjectTest) {
-      const { svg, updateView } = createSvgViewport(this, 'vector-actors')
-      if (svgObjectTest) {
-        this.events.once('shutdown', mountSvgObjectTest(arena, svg, width, height))
-      } else {
-        const size = 48
-        const marker = svg.appendChild(document.createElementNS(SVG_NS, 'rect'))
-        marker.id = 'world-center'
-        marker.setAttribute('x', String((width - size) / 2))
-        marker.setAttribute('y', String((height - size) / 2))
-        marker.setAttribute('width', String(size))
-        marker.setAttribute('height', String(size))
-        marker.setAttribute('fill', '#fff')
-        marker.setAttribute('stroke', '#172c39')
-        marker.setAttribute('stroke-width', '5')
-      }
-      field.append(svg)
-      bindMapView(arena, this, width, height, waterY, updateView)
-      return
-    }
-    const { placement, physics } = await loadTerrainPlacement(map, !cameraOnly)
+    const { placement, pixels, worldMap } = await loadTerrainPlacement(map)
     if (!this.sys.isActive()) return
-    const vector = textureTest || map.vectorArt === undefined ? undefined
+    const vector = map.vectorArt === undefined ? undefined
       : createVectorTerrain(this, field, map.vectorArt, width, height, placement)
     if (!vector && !this.textures.exists('terrain-art')) return
     const terrain = vector ?? createRasterTerrain(this, width, height, placement)
@@ -145,8 +116,7 @@ class Arena extends Phaser.Scene {
       vector?.updateView(left, top, visibleWidth, visibleHeight)
       actors.updateView(left, top, visibleWidth, visibleHeight)
     })
-    if (!physics) return
-    await addIslandFighter(this, arena, physics.worldMap, physics.pixels, terrain.cutCrater, actors.svg)
+    await addIslandFighter(this, arena, worldMap, pixels, terrain.cutCrater, actors.svg)
   }
 }
 
