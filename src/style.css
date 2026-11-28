@@ -184,3 +184,10 @@ body { margin: 0 }
 .arena[data-map="house-of-cards"] .clouds {
   display: none;
 }
+
+/* Isolate the static artwork from character and HUD paint invalidations. */
+.map-background,
+.vector-terrain,
+.vector-actors {
+  contain: paint;
+}
