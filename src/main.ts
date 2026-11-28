@@ -123,7 +123,7 @@ class Arena extends Phaser.Scene {
       bindMapView(arena, this, width, height, waterY, updateView)
       return
     }
-    const { placement, pixels, worldMap } = await loadTerrainPlacement(map)
+    const { placement, physics } = await loadTerrainPlacement(map, !cameraOnly)
     if (!this.sys.isActive()) return
     const vector = map.vectorArt === undefined ? undefined
       : createVectorTerrain(this, field, map.vectorArt, width, height, placement)
@@ -135,9 +135,8 @@ class Arena extends Phaser.Scene {
       vector?.updateView(left, top, visibleWidth, visibleHeight)
       actors.updateView(left, top, visibleWidth, visibleHeight)
     })
-    // Diagnostic comparison: render the same map and camera without the fighter or physics loop.
-    if (cameraOnly) return
-    await addIslandFighter(this, arena, worldMap, pixels, terrain.cutCrater, actors.svg)
+    if (!physics) return
+    await addIslandFighter(this, arena, physics.worldMap, physics.pixels, terrain.cutCrater, actors.svg)
   }
 }
 
