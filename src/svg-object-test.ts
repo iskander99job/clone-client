@@ -1,5 +1,6 @@
 import { SVG_NS } from './svg-viewport'
 
+const STEP = 10
 const OUTLINE = 'M-45,20 C-58,8 -42,-20 -24,-23 C-15,-44 10,-45 21,-28 C44,-36 55,-14 48,-1 C61,12 44,37 27,32 C14,45 -7,41 -17,31 C-35,40 -50,33 -45,20Z'
 
 export function mountSvgObjectTest(arena: HTMLElement, svg: SVGSVGElement, width: number, height: number) {
@@ -8,9 +9,9 @@ export function mountSvgObjectTest(arena: HTMLElement, svg: SVGSVGElement, width
   controls.setAttribute('role', 'group')
   controls.setAttribute('aria-label', 'Количество SVG-объектов')
   controls.innerHTML = `
-    <button type="button" aria-label="Добавить SVG-объект">+</button>
+    <button type="button" aria-label="Добавить 10 SVG-объектов">+10</button>
     <output aria-label="SVG-объектов" aria-live="polite"></output>
-    <button type="button" aria-label="Убрать SVG-объект">−</button>
+    <button type="button" aria-label="Убрать 10 SVG-объектов">−10</button>
   `
   arena.querySelector('.hud')!.append(controls)
   const [plus, minus] = controls.querySelectorAll('button')
@@ -36,14 +37,17 @@ export function mountSvgObjectTest(arena: HTMLElement, svg: SVGSVGElement, width
     object.setAttribute('stroke', '#493251')
     object.setAttribute('stroke-width', '4')
     objects.append(object)
-    updateCount()
   }
 
-  plus.addEventListener('click', addObject)
+  plus.addEventListener('click', () => {
+    for (let i = 0; i < STEP; i++) addObject()
+    updateCount()
+  })
   minus.addEventListener('click', () => {
-    if (objects.childElementCount > 1) objects.lastElementChild?.remove()
+    for (let i = 0; i < STEP && objects.childElementCount > 1; i++) objects.lastElementChild?.remove()
     updateCount()
   })
   addObject()
+  updateCount()
   return () => controls.remove()
 }
