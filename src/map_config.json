@@ -1,0 +1,147 @@
+{
+  "flat": {
+    "width": 2160,
+    "height": 900,
+    "waterY": 760,
+    "spawnCoordinateSpace": "world",
+    "spawnAnchor": "feet",
+    "spawnPoints": [
+      {
+        "id": "center",
+        "x": 1080,
+        "y": 560
+      },
+      {
+        "id": "right",
+        "x": 1735,
+        "y": 560
+      },
+      {
+        "id": "left",
+        "x": 425,
+        "y": 560
+      },
+      {
+        "id": "outer-right",
+        "x": 1950,
+        "y": 560
+      }
+    ]
+  },
+  "fruit-foreground": {
+    "width": 2160,
+    "height": 900,
+    "waterY": 760,
+    "spawnCoordinateSpace": "world",
+    "spawnAnchor": "feet",
+    "spawnPoints": [
+      {
+        "id": "lower-left",
+        "x": 875,
+        "y": 578
+      },
+      {
+        "id": "upper-right",
+        "x": 1735,
+        "y": 274
+      },
+      {
+        "id": "left-hill",
+        "x": 750,
+        "y": 528
+      },
+      {
+        "id": "lower-center",
+        "x": 1150,
+        "y": 570
+      }
+    ]
+  },
+  "quarry": {
+    "width": 2160,
+    "height": 900,
+    "waterY": 760,
+    "spawnCoordinateSpace": "world",
+    "spawnAnchor": "feet",
+    "spawnPoints": [
+      {
+        "id": "left-ledge",
+        "x": 425,
+        "y": 402
+      },
+      {
+        "id": "right-ledge",
+        "x": 1735,
+        "y": 418
+      },
+      {
+        "id": "basin",
+        "x": 1050,
+        "y": 590
+      },
+      {
+        "id": "right-edge",
+        "x": 1900,
+        "y": 416
+      }
+    ]
+  },
+  "fruit": {
+    "width": 1440,
+    "height": 480,
+    "waterY": 396,
+    "spawnCoordinateSpace": "world",
+    "spawnAnchor": "feet",
+    "spawnPoints": [
+      {
+        "id": "left-bank",
+        "x": 173,
+        "y": 290
+      },
+      {
+        "id": "right-bank",
+        "x": 1260,
+        "y": 272
+      },
+      {
+        "id": "middle-slope",
+        "x": 500,
+        "y": 320
+      },
+      {
+        "id": "summit",
+        "x": 700,
+        "y": 198
+      }
+    ]
+  },
+  "house-of-cards": {
+    "width": 2160,
+    "height": 1080,
+    "waterY": 1000,
+    "spawnCoordinateSpace": "world",
+    "spawnAnchor": "feet",
+    "spawnPoints": [
+      {
+        "id": "heart-roof",
+        "x": 770,
+        "y": 272
+      },
+      {
+        "id": "joker-roof",
+        "x": 1410,
+        "y": 180
+      },
+      {
+        "id": "left-deck",
+        "x": 550,
+        "y": 438
+      },
+      {
+        "id": "right-chip",
+        "x": 1650,
+        "y": 562
+      }
+    ]
+  }
+}

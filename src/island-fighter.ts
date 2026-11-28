@@ -86,7 +86,7 @@ export async function addIslandFighter(
   let lastBlast: Point | undefined
 
   function syncShoot() {
-    shoot.toggleAttribute('disabled', duel.phase !== 'aim' || !weapon.canShoot())
+    shoot.toggleAttribute('disabled', !body.isEnabled() || duel.phase !== 'aim' || !weapon.canShoot())
   }
 
   function syncWeapon() {
@@ -124,7 +124,7 @@ export async function addIslandFighter(
     }, { signal })
   }
   shoot.addEventListener('click', () => {
-    if (duel.phase !== 'aim' || !weapon.canShoot()) return
+    if (!body.isEnabled() || duel.phase !== 'aim' || !weapon.canShoot()) return
     const muzzle = weapon.getMuzzlePosition()
     const direction = weapon.getAimDirection()
     if (!muzzle || !direction) return
@@ -198,9 +198,9 @@ export async function addIslandFighter(
       const elevation = Number(held('ArrowUp')) - Number(held('ArrowDown'))
       if (elevation) weapon.setAimAngle(weapon.aimAngle + elevation * 70 * STEP)
     }
-    if (!flight) duel.movePlayer(animator.isJumping ? 0 : move, WALK_SPEED)
+    if (body.isEnabled() && !flight) duel.movePlayer(animator.isJumping ? 0 : move, WALK_SPEED)
 
-    if (animator.isReadyForTakeoff) {
+    if (body.isEnabled() && animator.isReadyForTakeoff) {
       if (duel.jumpPlayer(pendingJump)) {
         flight = { elapsed: 0, duration: -2 * body.linvel().y / duel.world.gravity.y }
         animator.notifyTakeoff()
@@ -218,9 +218,10 @@ export async function addIslandFighter(
       cutCrater(lastBlast, BLAST)
     }
     const position = body.translation()
-    if (position.y >= waterY || position.x < 0 || position.x > width) {
-      body.setTranslation(spawn, true)
-      body.setLinvel({ x: 0, y: 0 }, true)
+    if (!body.isEnabled() || position.y >= waterY || position.x < 0 || position.x > width) {
+      const respawned = duel.respawnFighter(0)
+      if (respawned) sprite.removeAttribute('display')
+      else sprite.setAttribute('display', 'none')
       flight = undefined
       animator.resetPose()
     }
