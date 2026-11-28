@@ -10,7 +10,9 @@ import './style.css'
 import './hud.css'
 
 // Keep the island's world dimensions independent of the texture resolution.
-const requestedMap = new URLSearchParams(location.search).get('map')
+const query = new URLSearchParams(location.search)
+const requestedMap = query.get('map')
+const cameraOnly = query.get('player') === 'off'
 const mapId = requestedMap === 'fruit' || requestedMap === 'quarry' || requestedMap === 'flat'
   || requestedMap === 'fruit-foreground' ? requestedMap : 'house-of-cards'
 const map = {
@@ -116,6 +118,8 @@ class Arena extends Phaser.Scene {
       vector?.updateView(left, top, visibleWidth, visibleHeight)
       actors.updateView(left, top, visibleWidth, visibleHeight)
     })
+    // Diagnostic comparison: render the same map and camera without the fighter or physics loop.
+    if (cameraOnly) return
     await addIslandFighter(this, arena, worldMap, pixels, terrain.cutCrater, actors.svg)
   }
 }
